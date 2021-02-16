@@ -5,21 +5,122 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/dark_grey"
+    android:gravity="center"
     android:padding="@dimen/box_inset_layout_padding"
     tools:context=".MainActivity"
     tools:deviceIds="wear">
 
-    <FrameLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="@dimen/inner_frame_layout_padding"
-        app:boxedEdges="all">
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/text"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/hello_world" />
+            android:orientation="vertical" >
 
-    </FrameLayout>
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                >
+
+                <TableLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    >
+
+                    <TableRow
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center">
+
+                        <TextView
+                            android:id="@+id/status"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Status:"
+                            android:textSize="10sp" />
+
+                    </TableRow>
+
+
+<!--                    <TableRow-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="match_parent"-->
+<!--                        android:gravity="center">-->
+
+<!--                        <TextView-->
+<!--                            android:id="@+id/textView13"-->
+<!--                            android:layout_width="wrap_content"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:text="TextView" />-->
+
+<!--                        <TextView-->
+<!--                            android:id="@+id/textView24"-->
+<!--                            android:layout_width="wrap_content"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:text="TextView" />-->
+
+<!--                    </TableRow>-->
+
+                </TableLayout>
+            </ScrollView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_horizontal"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/listen"
+                    android:layout_width="55dp"
+                    android:layout_height="35sp"
+                    android:text="Listen"
+                    android:textAllCaps="false"
+                    android:textSize="10sp" />
+
+                <Button
+                    android:id="@+id/listDevices"
+                    android:layout_width="55dp"
+                    android:layout_height="35sp"
+                    android:text="List"
+                    android:textAllCaps="false"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <ListView
+                android:id="@+id/listview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@+id/listen"
+                android:layout_alignParentStart="true"
+                android:layout_marginTop="5dp"
+                android:background="@android:color/darker_gray"
+                android:visibility="visible">
+
+            </ListView>
+
+            <TextView
+                android:id="@+id/msg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/listview"
+                android:layout_marginTop="5dp"
+                android:hint="Message"
+                android:textAlignment="center"
+                android:textColor="?android:attr/textColorLink"
+                android:textSize="20sp"
+                android:textStyle="italic" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!--    <FrameLayout-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="match_parent"-->
+    <!--        android:padding="@dimen/inner_frame_layout_padding"-->
+    <!--        app:boxedEdges="all">-->
+
+    <!--    </FrameLayout>-->
 </androidx.wear.widget.BoxInsetLayout>

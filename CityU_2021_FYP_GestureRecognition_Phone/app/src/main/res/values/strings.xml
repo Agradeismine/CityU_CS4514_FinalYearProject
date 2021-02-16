@@ -1,9 +1,9 @@
 <resources>
-    <string name="app_name">CityU_2021_FYP_GestureRecognition_Phone</string>
+    <string name="app_name">Gesture Recognition</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">Android Studio</string>
-    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_title">Gesture Recognition (Phone side)</string>
+    <string name="nav_header_subtitle">CityU 2021 FYP</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
 
