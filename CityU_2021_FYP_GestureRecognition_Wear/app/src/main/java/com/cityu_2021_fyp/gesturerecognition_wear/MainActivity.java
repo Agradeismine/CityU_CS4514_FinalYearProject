@@ -13,7 +13,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -23,12 +22,12 @@ import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 
-public class MainActivity extends WearableActivity {
+public class MainActivity extends WearableActivity { //implements DialogResultListener
 
     private TextView mTextView;
     private Button listen,send, listDevices;
     private ListView listView;
-    private TextView textView, msg_box,status;
+    private TextView msg_box,status;
 
     BluetoothAdapter bluetoothAdapter;
     BluetoothDevice[] btArray;
