@@ -67,6 +67,7 @@
             </ScrollView>
 
             <LinearLayout
+                android:id="@+id/linLayoutforBlueTooth"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center_horizontal"
@@ -89,6 +90,30 @@
                     android:textSize="10sp" />
             </LinearLayout>
 
+            <LinearLayout
+                android:id="@+id/linLayoutForRecording"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_horizontal"
+                android:orientation="horizontal">
+
+                <ToggleButton
+                    android:id="@+id/recMotion"
+                    android:layout_width="55dp"
+                    android:layout_height="35sp"
+                    android:text="REC"
+                    android:textAllCaps="false"
+                    android:textSize="10sp" />
+
+                <Button
+                    android:id="@+id/saveMotion"
+                    android:layout_width="55dp"
+                    android:layout_height="35sp"
+                    android:text="SAVE"
+                    android:textAllCaps="false"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
             <ListView
                 android:id="@+id/listview"
                 android:layout_width="match_parent"
@@ -104,11 +129,11 @@
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/chart"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_above="@+id/toggleRec"/>
+                android:layout_height="150dp"
+                android:layout_above="@+id/toggleRec" />
 
             <TextView
-                android:id="@+id/msg"
+                android:id="@+id/msg_box"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/listview"

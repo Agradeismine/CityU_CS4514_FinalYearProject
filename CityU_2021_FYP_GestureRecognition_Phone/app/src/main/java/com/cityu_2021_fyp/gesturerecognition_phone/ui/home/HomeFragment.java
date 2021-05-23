@@ -50,7 +50,6 @@ public class HomeFragment extends Fragment {
     static final int STATE_CONNECTED=3;
     static final int STATE_CONNECTION_FAILED=4;
     static final int STATE_MESSAGE_RECEIVED=5;
-
     int REQUEST_ENABLE_BLUETOOTH=1;
 
     private static final String APP_NAME = "CityU_2021_FYP_GestureRecognition";
@@ -123,7 +122,6 @@ public class HomeFragment extends Fragment {
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 ClientClass clientClass=new ClientClass(btArray[i]);
                 clientClass.start();
-
                 status.setText("Connecting");
             }
         });
@@ -168,8 +166,7 @@ public class HomeFragment extends Fragment {
         }
     });
 
-    private class ServerClass extends Thread
-    {
+    private class ServerClass extends Thread {
         private BluetoothServerSocket serverSocket;
 
         public ServerClass(){
