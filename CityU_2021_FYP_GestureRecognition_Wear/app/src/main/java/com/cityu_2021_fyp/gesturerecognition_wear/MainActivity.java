@@ -52,7 +52,7 @@ public class MainActivity extends WearableActivity {
     private ToggleButton recMotion;
     private ListView listView;
     private TextView msg_box,status;
-    LinearLayout linLayoutforBlueTooth, linLayoutForRecording;
+    LinearLayout linLayoutForBlueTooth, linLayoutForRecording;
 
     BluetoothAdapter bluetoothAdapter;
     BluetoothDevice[] btArray;
@@ -95,16 +95,16 @@ public class MainActivity extends WearableActivity {
         setAmbientEnabled();
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-
+        //init the view before do anything
         findViewByIdes();
 
         bluetoothAdapter=BluetoothAdapter.getDefaultAdapter();
         //need to comment the following for opening in simulator
-        if(!bluetoothAdapter.isEnabled())
-        {
-            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent,REQUEST_ENABLE_BLUETOOTH);
-        }
+//        if(!bluetoothAdapter.isEnabled())
+//        {
+//            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+//            startActivityForResult(enableIntent,REQUEST_ENABLE_BLUETOOTH);
+//        }
 
         implementViewListeners();
     }
@@ -122,9 +122,12 @@ public class MainActivity extends WearableActivity {
         status = findViewById(R.id.status);
         recMotion = findViewById(R.id.recMotion);
         saveMotion = findViewById(R.id.saveMotion); //idea: auto send the file to phone by using bluetooth
-        linLayoutforBlueTooth = findViewById(R.id.linLayoutforBlueTooth);
-
+        linLayoutForBlueTooth = findViewById(R.id.linLayoutforBlueTooth);
+        linLayoutForRecording = findViewById(R.id.linLayoutForRecording);
         chart = findViewById(R.id.chart);
+        linLayoutForRecording.setVisibility(View.GONE);
+        chart.setVisibility(View.GONE);
+
 
         //chart.setLogEnabled(true);
         chart.setTouchEnabled(true);
@@ -289,6 +292,7 @@ public class MainActivity extends WearableActivity {
         set.setFillAlpha(65);
         set.setFillColor(ColorTemplate.getHoloBlue());
         set.setHighLightColor(Color.WHITE);
+        set.setHighlightLineWidth(2);
         set.setValueTextColor(Color.WHITE);
         set.setValueTextSize(9f);
         set.setDrawValues(false);
@@ -313,8 +317,11 @@ public class MainActivity extends WearableActivity {
                     break;
                 case STATE_CONNECTED:
                     status.setText("Connected");
+                    msg_box.setText("Message");
                     listView.setVisibility(View.GONE);
-                    linLayoutforBlueTooth.setVisibility(View.GONE);
+                    linLayoutForBlueTooth.setVisibility(View.GONE);
+                    linLayoutForRecording.setVisibility(View.VISIBLE);
+                    chart.setVisibility(View.VISIBLE);
                     break;
                 case STATE_CONNECTION_FAILED:
                     status.setText("Connection Failed");

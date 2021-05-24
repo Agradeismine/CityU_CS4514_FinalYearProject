@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">Gesture Recognition</string>
+    <string name="project_name">CityU_2021_FYP_GestureRecognition_Phone</string>
+
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="nav_header_title">Gesture Recognition (Phone side)</string>
