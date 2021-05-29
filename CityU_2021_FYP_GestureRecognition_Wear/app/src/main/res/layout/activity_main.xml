@@ -99,19 +99,28 @@
 
                 <ToggleButton
                     android:id="@+id/recMotion"
-                    android:layout_width="55dp"
+                    android:layout_width="65dp"
                     android:layout_height="35sp"
                     android:text="REC"
                     android:textAllCaps="false"
+                    android:textOff="REC_OFF"
+                    android:textOn="REC_ON"
                     android:textSize="10sp" />
 
-                <Button
+<!--                <Button-->
+<!--                    android:id="@+id/saveMotion"-->
+<!--                    android:layout_width="55dp"-->
+<!--                    android:layout_height="35dp"-->
+<!--                    android:text="SAVE"-->
+<!--                    android:textAllCaps="false"-->
+<!--                    android:textSize="10sp" />-->
+
+                <ImageButton
                     android:id="@+id/saveMotion"
-                    android:layout_width="55dp"
+                    android:layout_width="35dp"
                     android:layout_height="35sp"
-                    android:text="SAVE"
-                    android:textAllCaps="false"
-                    android:textSize="10sp" />
+                    android:src="@drawable/ic_save" />
+
             </LinearLayout>
 
             <ListView
@@ -129,7 +138,7 @@
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/chart"
                 android:layout_width="match_parent"
-                android:layout_height="150dp"
+                android:layout_height="180dp"
                 android:layout_above="@+id/toggleRec" />
 
             <TextView
@@ -138,6 +147,7 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/listview"
                 android:layout_marginTop="5dp"
+                android:layout_marginBottom="20dp"
                 android:hint="Waiting for Connection📱🔗⌚"
                 android:textAlignment="center"
                 android:textColor="?android:attr/textColorLink"

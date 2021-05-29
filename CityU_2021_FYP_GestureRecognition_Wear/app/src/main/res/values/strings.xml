@@ -6,5 +6,15 @@
     values-round/strings.xml for round devices.
     -->
     <string name="hello_world">Hello Square World!</string>
+<!--    \u0020 is a unicode space character.-->
+    <string-array name="colorList">
+        <item>Red\u0020\u0020\u0020\u0020\u0020</item>
+        <item>Green\u0020\u0020\u0020</item>
+        <item>Blue\u0020\u0020\u0020\u0020</item>
+        <item>Gray\u0020\u0020\u0020\u0020</item>
+        <item>Orange\u0020\u0020</item>
+        <item>Pink\u0020\u0020\u0020\u0020</item>
+        <item>Purple\u0020\u0020</item>
+    </string-array>
     <string name="sensor_failed">Sensor listener registration failed</string>
 </resources>

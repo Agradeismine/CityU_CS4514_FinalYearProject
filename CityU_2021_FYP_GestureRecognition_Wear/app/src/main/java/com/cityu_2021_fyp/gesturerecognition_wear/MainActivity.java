@@ -1,11 +1,11 @@
 package com.cityu_2021_fyp.gesturerecognition_wear;
 
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
-import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -16,12 +16,15 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -34,6 +37,8 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+import com.github.mikephil.charting.listener.ChartTouchListener;
+import com.github.mikephil.charting.listener.OnChartGestureListener;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 
@@ -48,8 +53,10 @@ import utils.TimestampAxisFormatter;
 public class MainActivity extends WearableActivity {
 
     private static final String[] LINE_DESCRIPTIONS = {"X", "Y", "Z"};
-    private Button listen, listDevices, saveMotion;  //,send
+    private Button listen, listDevices;  //, saveMotion ,send
+    private ImageButton saveMotion;
     private ToggleButton recMotion;
+    private Spinner spinLabels;
     private ListView listView;
     private TextView msg_box,status;
     LinearLayout linLayoutForBlueTooth, linLayoutForRecording;
@@ -122,23 +129,26 @@ public class MainActivity extends WearableActivity {
         status = findViewById(R.id.status);
         recMotion = findViewById(R.id.recMotion);
         saveMotion = findViewById(R.id.saveMotion); //idea: auto send the file to phone by using bluetooth
+        saveMotion.setEnabled(false);
+        saveMotion.setImageAlpha(50);	//change button color if isSampleSelected
+
         linLayoutForBlueTooth = findViewById(R.id.linLayoutforBlueTooth);
         linLayoutForRecording = findViewById(R.id.linLayoutForRecording);
         chart = findViewById(R.id.chart);
         linLayoutForRecording.setVisibility(View.GONE);
         chart.setVisibility(View.GONE);
-
+        chart.setDoubleTapToZoomEnabled(false);
 
         //chart.setLogEnabled(true);
         chart.setTouchEnabled(true);
         chart.setOnChartValueSelectedListener(chartValueSelectedListener);
+        chart.setOnChartGestureListener(chartGestureListener);
         chart.setData(new LineData());
         getLineData().setValueTextColor(Color.WHITE);
 
         chart.getDescription().setEnabled(false);
         chart.getLegend().setEnabled(true);
         chart.getLegend().setTextColor(Color.WHITE);
-
         XAxis xAxis = chart.getXAxis();
         xAxis.setTextColor(Color.WHITE);
         xAxis.setDrawGridLines(true);
@@ -206,6 +216,42 @@ public class MainActivity extends WearableActivity {
             }
         });
 
+        saveMotion.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder mBuilder = new AlertDialog.Builder(MainActivity.this);
+                View mView = getLayoutInflater().inflate(R.layout.dialog_spinner, null);
+                mBuilder.setTitle("Save with Color Label");
+                final Spinner mSpinner = (Spinner) mView.findViewById(R.id.labelSpinner);
+                ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this,
+                        android.R.layout.simple_spinner_item,
+                        getResources().getStringArray(R.array.colorList));
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);//saveSelectionDataToast(Utils.generateFileName(getCurrentLabel(), System.currentTimeMillis()));
+                mSpinner.setAdapter(adapter);
+
+                mBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Toast.makeText(MainActivity.this, mSpinner.getSelectedItem().toString(), Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();   //close dialog and release resources
+                    }
+                });
+
+                mBuilder.setNegativeButton("Dismiss", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+
+                mBuilder.setView(mView);
+                AlertDialog dialog = mBuilder.create();
+                dialog.show();
+
+                //moveSelectionToNext();
+            }
+        });
+
 //        send.setOnClickListener(new View.OnClickListener() {    //no send button at this time.
 //            @Override
 //            public void onClick(View view) {
@@ -213,6 +259,13 @@ public class MainActivity extends WearableActivity {
 //                sendReceive.write(string.getBytes());
 //            }
 //        });
+    }
+
+    private Object getCurrentLabel() {
+        //Label label = (Label) spinLabels.getSelectedItem();
+        //if (label == null) return "{null}";
+        //return label.toString();
+        return null;
     }
 
     private void stopRec() {
@@ -259,7 +312,7 @@ public class MainActivity extends WearableActivity {
             addPoint(getLineData(), X_INDEX, floatTimestampMicros, x);
             addPoint(getLineData(), Y_INDEX, floatTimestampMicros, y);
             addPoint(getLineData(), Z_INDEX, floatTimestampMicros, z);
-            Log.d("floatTimestampMicros", String.valueOf(floatTimestampMicros));
+            //Log.d("floatTimestampMicros", String.valueOf(floatTimestampMicros));  //for test
             chart.notifyDataSetChanged();
             chart.invalidate();
 
@@ -301,6 +354,17 @@ public class MainActivity extends WearableActivity {
         set.setDrawHorizontalHighlightIndicator(false);
         set.setDrawFilled(false);
         return set;
+    }
+
+    private boolean isSampleSelected() {
+        //if no motion data
+        if (getLineData().getDataSetCount() == 0) return false;
+        //if no selectedEntryIndex
+        if (selectedEntryIndex == -1) return false;
+        //if (recorded samples - selectedEntryIndex) is smaller than 128
+        if (getLineData().getDataSetByIndex(0).getEntryCount() - selectedEntryIndex < GESTURE_SAMPLES)
+            return false;
+        return true;
     }
 
     Handler handler=new Handler(new Handler.Callback() {
@@ -383,8 +447,7 @@ public class MainActivity extends WearableActivity {
         }
     }
 
-    private class ClientClass extends Thread
-    {
+    private class ClientClass extends Thread {
         private BluetoothDevice device;
         private BluetoothSocket socket;
 
@@ -399,8 +462,7 @@ public class MainActivity extends WearableActivity {
             }
         }
 
-        public void run()
-        {
+        public void run() {
             try {
                 socket.connect();
                 Message message=Message.obtain();
@@ -419,8 +481,7 @@ public class MainActivity extends WearableActivity {
         }
     }
 
-    private class SendReceive extends Thread
-    {
+    private class SendReceive extends Thread {
         private final BluetoothSocket bluetoothSocket;
         private final InputStream inputStream;
         private final OutputStream outputStream;
@@ -442,8 +503,7 @@ public class MainActivity extends WearableActivity {
             outputStream=tempOut;
         }
 
-        public void run()
-        {
+        public void run() {
             byte[] buffer=new byte[1024];
             int bytes;
 
@@ -458,8 +518,7 @@ public class MainActivity extends WearableActivity {
             }
         }
 
-        public void write(byte[] bytes)
-        {
+        public void write(byte[] bytes) {
             try {
                 outputStream.write(bytes);
             } catch (IOException e) {
@@ -476,11 +535,45 @@ public class MainActivity extends WearableActivity {
         return chart.getLineData();
     }
 
+    private final OnChartGestureListener chartGestureListener = new OnChartGestureListener() {
+
+
+        @Override
+        public void onChartGestureStart(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {}
+
+        @Override
+        public void onChartGestureEnd(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {}
+
+        @Override
+        public void onChartLongPressed(MotionEvent me) {}
+
+        @Override
+        public void onChartDoubleTapped(MotionEvent me) {
+            //set the chart screen
+            //chart.fitScreen();
+            chart.resetZoom();
+
+        }
+
+        @Override
+        public void onChartSingleTapped(MotionEvent me) {}
+
+        @Override
+        public void onChartFling(MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {}
+
+        @Override
+        public void onChartScale(MotionEvent me, float scaleX, float scaleY) {}
+
+        @Override
+        public void onChartTranslate(MotionEvent me, float dX, float dY) {}
+    };
+
     private final OnChartValueSelectedListener chartValueSelectedListener = new OnChartValueSelectedListener() {
         @Override
         public void onValueSelected(Entry e, Highlight h) {
             ILineDataSet set = getLineData().getDataSetByIndex(h.getDataSetIndex());
             selectedEntryIndex = set.getEntryIndex(e);
+            canSelectedDataSave();
             //supportInvalidateOptionsMenu();
             //return current selected part of information
             fillStatus();
@@ -500,6 +593,13 @@ public class MainActivity extends WearableActivity {
             fillStatus();
         }
     };
+
+    private boolean canSelectedDataSave() {
+        boolean isSampleSelected = isSampleSelected();
+        saveMotion.setEnabled(isSampleSelected());
+        saveMotion.setImageAlpha(isSampleSelected ? 255 : 70);	//change button color if isSampleSelected
+        return isSampleSelected;
+    }
 
     private Entry getSelectionEndEntry() {
         int index = selectedEntryIndex + GESTURE_SAMPLES;
