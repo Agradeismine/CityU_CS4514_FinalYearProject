@@ -107,14 +107,6 @@
                     android:textOn="REC_ON"
                     android:textSize="10sp" />
 
-<!--                <Button-->
-<!--                    android:id="@+id/saveMotion"-->
-<!--                    android:layout_width="55dp"-->
-<!--                    android:layout_height="35dp"-->
-<!--                    android:text="SAVE"-->
-<!--                    android:textAllCaps="false"-->
-<!--                    android:textSize="10sp" />-->
-
                 <ImageButton
                     android:id="@+id/saveMotion"
                     android:layout_width="35dp"

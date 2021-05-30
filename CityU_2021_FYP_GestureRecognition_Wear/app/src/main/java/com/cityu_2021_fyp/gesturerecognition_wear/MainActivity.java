@@ -58,7 +58,7 @@ public class MainActivity extends WearableActivity {
     private ToggleButton recMotion;
     private Spinner spinLabels;
     private ListView listView;
-    private TextView msg_box,status;
+    private TextView msg_box, status;
     LinearLayout linLayoutForBlueTooth, linLayoutForRecording;
 
     BluetoothAdapter bluetoothAdapter;
@@ -67,11 +67,11 @@ public class MainActivity extends WearableActivity {
     SendReceive sendReceive;
 
     static final int STATE_LISTENING = 1;
-    static final int STATE_CONNECTING=2;
-    static final int STATE_CONNECTED=3;
-    static final int STATE_CONNECTION_FAILED=4;
-    static final int STATE_MESSAGE_RECEIVED=5;
-    static final int REQUEST_ENABLE_BLUETOOTH=1;
+    static final int STATE_CONNECTING = 2;
+    static final int STATE_CONNECTED = 3;
+    static final int STATE_CONNECTION_FAILED = 4;
+    static final int STATE_MESSAGE_RECEIVED = 5;
+    static final int REQUEST_ENABLE_BLUETOOTH = 1;
 
     private LineChart chart;
     private long firstTimestamp = -1;
@@ -89,10 +89,9 @@ public class MainActivity extends WearableActivity {
     private static final int[] LINE_COLORS = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF};  //Transparency is 0xFF, which is completely opaque, Red, Green, Blue
 
 
-
     private static final String APP_NAME = "CityU_2021_FYP_GestureRecognition";
-    private static final UUID MY_UUID=UUID.fromString("8ce235c0-223a-19e0-ac64-0803950c9a66");
-    private long fileNameTimestamp= -1;
+    private static final UUID MY_UUID = UUID.fromString("8ce235c0-223a-19e0-ac64-0803950c9a66");
+    private long fileNameTimestamp = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,7 +104,7 @@ public class MainActivity extends WearableActivity {
         //init the view before do anything
         findViewByIdes();
 
-        bluetoothAdapter=BluetoothAdapter.getDefaultAdapter();
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         //need to comment the following for opening in simulator
 //        if(!bluetoothAdapter.isEnabled())
 //        {
@@ -130,7 +129,7 @@ public class MainActivity extends WearableActivity {
         recMotion = findViewById(R.id.recMotion);
         saveMotion = findViewById(R.id.saveMotion); //idea: auto send the file to phone by using bluetooth
         saveMotion.setEnabled(false);
-        saveMotion.setImageAlpha(50);	//change button color if isSampleSelected
+        saveMotion.setImageAlpha(50);    //change button color if isSampleSelected
 
         linLayoutForBlueTooth = findViewById(R.id.linLayoutforBlueTooth);
         linLayoutForRecording = findViewById(R.id.linLayoutForRecording);
@@ -173,20 +172,18 @@ public class MainActivity extends WearableActivity {
             //show listview
             listView.setVisibility(View.VISIBLE);
 
-            Set<BluetoothDevice> bt=bluetoothAdapter.getBondedDevices();
-            String[] strings=new String[bt.size()];
-            btArray=new BluetoothDevice[bt.size()];
-            int index=0;
+            Set<BluetoothDevice> bt = bluetoothAdapter.getBondedDevices();
+            String[] strings = new String[bt.size()];
+            btArray = new BluetoothDevice[bt.size()];
+            int index = 0;
 
-            if( bt.size()>0)
-            {
-                for(BluetoothDevice device : bt)
-                {
-                    btArray[index]= device;
-                    strings[index]=device.getName();
+            if (bt.size() > 0) {
+                for (BluetoothDevice device : bt) {
+                    btArray[index] = device;
+                    strings[index] = device.getName();
                     index++;
                 }
-                ArrayAdapter<String> arrayAdapter=new ArrayAdapter<String>(getApplicationContext(),android.R.layout.simple_list_item_1,strings);
+                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_list_item_1, strings);
                 listView.setAdapter(arrayAdapter);
             }
         });
@@ -194,7 +191,7 @@ public class MainActivity extends WearableActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                ClientClass clientClass=new ClientClass(btArray[i]);
+                ClientClass clientClass = new ClientClass(btArray[i]);
                 clientClass.start();
                 status.setText("Connecting");
             }
@@ -203,7 +200,7 @@ public class MainActivity extends WearableActivity {
         listen.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ServerClass serverClass=new ServerClass();
+                ServerClass serverClass = new ServerClass();
                 serverClass.start();
             }
         });
@@ -278,8 +275,7 @@ public class MainActivity extends WearableActivity {
     private void startRec() {
         if (isStartRec()) {
             getLineData().clearValues();
-        }
-        else {
+        } else {
             Toast.makeText(this, R.string.sensor_failed, Toast.LENGTH_SHORT).show();    //error may occurs in line 286->(recStarted = sensorManager.registerListener...)
             recMotion.setChecked(false);
         }
@@ -297,7 +293,8 @@ public class MainActivity extends WearableActivity {
 
     private final SensorEventListener sensorEventListener = new SensorEventListener() {
         @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        }
 
         @Override
         public void onSensorChanged(SensorEvent event) {
@@ -367,12 +364,11 @@ public class MainActivity extends WearableActivity {
         return true;
     }
 
-    Handler handler=new Handler(new Handler.Callback() {
+    Handler handler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
 
-            switch (msg.what)
-            {
+            switch (msg.what) {
                 case STATE_LISTENING:
                     status.setText("Listening");
                     break;
@@ -391,8 +387,8 @@ public class MainActivity extends WearableActivity {
                     status.setText("Connection Failed");
                     break;
                 case STATE_MESSAGE_RECEIVED:
-                    byte[] readBuff= (byte[]) msg.obj;
-                    String tempMsg=new String(readBuff,0,msg.arg1);
+                    byte[] readBuff = (byte[]) msg.obj;
+                    String tempMsg = new String(readBuff, 0, msg.arg1);
                     msg_box.setText(tempMsg);
                     break;
             }
@@ -403,44 +399,41 @@ public class MainActivity extends WearableActivity {
     private class ServerClass extends Thread {
         private BluetoothServerSocket serverSocket;
 
-        public ServerClass(){
+        public ServerClass() {
             try {
-                serverSocket=bluetoothAdapter.listenUsingRfcommWithServiceRecord(APP_NAME,MY_UUID);
+                serverSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord(APP_NAME, MY_UUID);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        public void run()
-        {
-            BluetoothSocket socket=null;
+        public void run() {
+            BluetoothSocket socket = null;
 
-            while (socket==null)
-            {
+            while (socket == null) {
                 try {
-                    Message message=Message.obtain();
-                    message.what=STATE_CONNECTING;
+                    Message message = Message.obtain();
+                    message.what = STATE_CONNECTING;
                     handler.sendMessage(message);
 
-                    socket=serverSocket.accept();
+                    socket = serverSocket.accept();
                 } catch (IOException e) {
                     e.printStackTrace();
-                    Message message=Message.obtain();
-                    message.what=STATE_CONNECTION_FAILED;
+                    Message message = Message.obtain();
+                    message.what = STATE_CONNECTION_FAILED;
                     handler.sendMessage(message);
                 }
 
-                if(socket!=null)
-                {
-                    Message message=Message.obtain();
-                    message.what=STATE_CONNECTED;
+                if (socket != null) {
+                    Message message = Message.obtain();
+                    message.what = STATE_CONNECTED;
                     handler.sendMessage(message);
 
-                    sendReceive=new SendReceive(socket);
+                    sendReceive = new SendReceive(socket);
                     sendReceive.start();
                     Log.d("isRunning", "Hi, socket is fine!");
                     break;
-                }else{
+                } else {
                     Log.d("isRunning", "Hi, socket is null! :(");
                 }
             }
@@ -451,12 +444,11 @@ public class MainActivity extends WearableActivity {
         private BluetoothDevice device;
         private BluetoothSocket socket;
 
-        public ClientClass (BluetoothDevice device1)
-        {
-            device=device1;
+        public ClientClass(BluetoothDevice device1) {
+            device = device1;
 
             try {
-                socket=device.createRfcommSocketToServiceRecord(MY_UUID);
+                socket = device.createRfcommSocketToServiceRecord(MY_UUID);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -465,17 +457,17 @@ public class MainActivity extends WearableActivity {
         public void run() {
             try {
                 socket.connect();
-                Message message=Message.obtain();
-                message.what=STATE_CONNECTED;
+                Message message = Message.obtain();
+                message.what = STATE_CONNECTED;
                 handler.sendMessage(message);
 
-                sendReceive=new SendReceive(socket);
+                sendReceive = new SendReceive(socket);
                 sendReceive.start();
 
             } catch (IOException e) {
                 e.printStackTrace();
-                Message message=Message.obtain();
-                message.what=STATE_CONNECTION_FAILED;
+                Message message = Message.obtain();
+                message.what = STATE_CONNECTION_FAILED;
                 handler.sendMessage(message);
             }
         }
@@ -486,32 +478,30 @@ public class MainActivity extends WearableActivity {
         private final InputStream inputStream;
         private final OutputStream outputStream;
 
-        public SendReceive (BluetoothSocket socket)
-        {
-            bluetoothSocket=socket;
-            InputStream tempIn=null;
-            OutputStream tempOut=null;
+        public SendReceive(BluetoothSocket socket) {
+            bluetoothSocket = socket;
+            InputStream tempIn = null;
+            OutputStream tempOut = null;
 
             try {
-                tempIn=bluetoothSocket.getInputStream();
-                tempOut=bluetoothSocket.getOutputStream();
+                tempIn = bluetoothSocket.getInputStream();
+                tempOut = bluetoothSocket.getOutputStream();
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            inputStream=tempIn;
-            outputStream=tempOut;
+            inputStream = tempIn;
+            outputStream = tempOut;
         }
 
         public void run() {
-            byte[] buffer=new byte[1024];
+            byte[] buffer = new byte[1024];
             int bytes;
 
-            while (true)
-            {
+            while (true) {
                 try {   //Problem found: only success first time, then always listening the connection and can't change to "connected" status
-                    bytes=inputStream.read(buffer);
-                    handler.obtainMessage(STATE_MESSAGE_RECEIVED,bytes,-1,buffer).sendToTarget();
+                    bytes = inputStream.read(buffer);
+                    handler.obtainMessage(STATE_MESSAGE_RECEIVED, bytes, -1, buffer).sendToTarget();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -539,13 +529,16 @@ public class MainActivity extends WearableActivity {
 
 
         @Override
-        public void onChartGestureStart(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {}
+        public void onChartGestureStart(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
+        }
 
         @Override
-        public void onChartGestureEnd(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {}
+        public void onChartGestureEnd(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
+        }
 
         @Override
-        public void onChartLongPressed(MotionEvent me) {}
+        public void onChartLongPressed(MotionEvent me) {
+        }
 
         @Override
         public void onChartDoubleTapped(MotionEvent me) {
@@ -556,16 +549,20 @@ public class MainActivity extends WearableActivity {
         }
 
         @Override
-        public void onChartSingleTapped(MotionEvent me) {}
+        public void onChartSingleTapped(MotionEvent me) {
+        }
 
         @Override
-        public void onChartFling(MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {}
+        public void onChartFling(MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {
+        }
 
         @Override
-        public void onChartScale(MotionEvent me, float scaleX, float scaleY) {}
+        public void onChartScale(MotionEvent me, float scaleX, float scaleY) {
+        }
 
         @Override
-        public void onChartTranslate(MotionEvent me, float dX, float dY) {}
+        public void onChartTranslate(MotionEvent me, float dX, float dY) {
+        }
     };
 
     private final OnChartValueSelectedListener chartValueSelectedListener = new OnChartValueSelectedListener() {
@@ -597,7 +594,7 @@ public class MainActivity extends WearableActivity {
     private boolean canSelectedDataSave() {
         boolean isSampleSelected = isSampleSelected();
         saveMotion.setEnabled(isSampleSelected());
-        saveMotion.setImageAlpha(isSampleSelected ? 255 : 70);	//change button color if isSampleSelected
+        saveMotion.setImageAlpha(isSampleSelected ? 255 : 70);    //change button color if isSampleSelected
         return isSampleSelected;
     }
 
@@ -624,7 +621,8 @@ public class MainActivity extends WearableActivity {
     }
 
     private String getXLabelAtEnd() {
-        if ((getLineData().getDataSetCount() == 0) || (getLineData().getDataSetByIndex(0).getEntryCount() == 0)) return "-";
+        if ((getLineData().getDataSetCount() == 0) || (getLineData().getDataSetByIndex(0).getEntryCount() == 0))
+            return "-";
         return String.format("%.03f", getLineData().getDataSetByIndex(0).getEntryForIndex(getLineData().getDataSetByIndex(0).getEntryCount() - 1).getX() / 1000f);
     }
 
