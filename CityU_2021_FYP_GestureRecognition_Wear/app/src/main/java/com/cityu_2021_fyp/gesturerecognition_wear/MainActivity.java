@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -42,16 +43,21 @@ import com.github.mikephil.charting.listener.OnChartGestureListener;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 
+import settings.AppSettings;
+import utils.FileStorage;
+import utils.Label;
 import utils.TimestampAxisFormatter;
 
 public class MainActivity extends WearableActivity {
 
+    private static final String TAG = MainActivity.class.getSimpleName();
     private static final String[] LINE_DESCRIPTIONS = {"X", "Y", "Z"};
     private Button listen, listDevices;  //, saveMotion ,send
     private ImageButton saveMotion;
@@ -59,7 +65,9 @@ public class MainActivity extends WearableActivity {
     private Spinner spinLabels;
     private ListView listView;
     private TextView msg_box, status;
-    LinearLayout linLayoutForBlueTooth, linLayoutForRecording;
+    private LinearLayout linLayoutForBlueTooth, linLayoutForRecording;
+
+    private AppSettings settings;
 
     BluetoothAdapter bluetoothAdapter;
     BluetoothDevice[] btArray;
@@ -97,21 +105,24 @@ public class MainActivity extends WearableActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         // Enables Always-on
         setAmbientEnabled();
+
+        settings = AppSettings.getAppSettings(this);
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        //init the view before do anything
-        findViewByIdes();
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         //need to comment the following for opening in simulator
-//        if(!bluetoothAdapter.isEnabled())
-//        {
-//            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-//            startActivityForResult(enableIntent,REQUEST_ENABLE_BLUETOOTH);
-//        }
+        if(!bluetoothAdapter.isEnabled())
+        {
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent,REQUEST_ENABLE_BLUETOOTH);
+        }
 
+        //init the view before do anything
+        findViewByIdes();
         implementViewListeners();
     }
 
@@ -223,13 +234,19 @@ public class MainActivity extends WearableActivity {
                 ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this,
                         android.R.layout.simple_spinner_item,
                         getResources().getStringArray(R.array.colorList));
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);//saveSelectionDataToast(Utils.generateFileName(getCurrentLabel(), System.currentTimeMillis()));
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 mSpinner.setAdapter(adapter);
 
                 mBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        //test code here
                         Toast.makeText(MainActivity.this, mSpinner.getSelectedItem().toString(), Toast.LENGTH_SHORT).show();
+
+                        //real code here
+                        saveSelectionData(FileStorage.generateFileName(getCurrentLabel(), System.currentTimeMillis()));
+                        moveSelectionToNext();
+
                         dialog.dismiss();   //close dialog and release resources
                     }
                 });
@@ -244,8 +261,6 @@ public class MainActivity extends WearableActivity {
                 mBuilder.setView(mView);
                 AlertDialog dialog = mBuilder.create();
                 dialog.show();
-
-                //moveSelectionToNext();
             }
         });
 
@@ -258,11 +273,57 @@ public class MainActivity extends WearableActivity {
 //        });
     }
 
-    private Object getCurrentLabel() {
-        //Label label = (Label) spinLabels.getSelectedItem();
-        //if (label == null) return "{null}";
-        //return label.toString();
-        return null;
+    private void moveSelectionToNext() {
+        int current = selectedEntryIndex != -1 ? selectedEntryIndex : 0;
+        current += GESTURE_SAMPLES;
+
+        ILineDataSet dataSet = getLineData().getDataSetByIndex(0);
+        while (current < dataSet.getEntryCount()) {
+            Entry e = dataSet.getEntryForIndex(current);
+            if (Math.abs(e.getY()) > 3) break;
+            current++;
+        }
+
+        if (current == dataSet.getEntryCount())
+            current = -1;
+        else
+        {
+            current -= 20;
+            if (current < -1) current = -1;
+        }
+
+        Entry e = current != -1 ? dataSet.getEntryForIndex(current) : null;
+        if (e != null) {
+            Highlight h = new Highlight(e.getX(), e.getY(), 0);
+            chart.highlightValue(h, true);
+        }
+        else {
+            chart.highlightValue(null, true);
+        }
+
+        fillStatus();
+    }
+
+    private void saveSelectionData(String fileName) {
+        try {
+            FileStorage.saveLineData(new File(settings.getWorkingDir(), fileName), getLineData(), selectedEntryIndex, GESTURE_SAMPLES);
+            showToast(getString(R.string.data_saved));
+        }
+        catch (IOException e) {
+            Log.e(TAG, getString(R.string.failed_to_save), e);
+            showToast(getString(R.string.failed_to_save_error) + e);
+        }
+    }
+
+    private void showToast(String str) {
+        Toast toast = Toast.makeText(this, str, Toast.LENGTH_SHORT);
+        toast.show();
+    }
+
+    private String getCurrentLabel() {
+        Label label = (Label) spinLabels.getSelectedItem();
+        if (label == null) return "{null}";
+        return label.toString().trim(); //remove head and end space
     }
 
     private void stopRec() {
@@ -276,7 +337,7 @@ public class MainActivity extends WearableActivity {
         if (isStartRec()) {
             getLineData().clearValues();
         } else {
-            Toast.makeText(this, R.string.sensor_failed, Toast.LENGTH_SHORT).show();    //error may occurs in line 286->(recStarted = sensorManager.registerListener...)
+            showToast(getString(R.string.sensor_failed));
             recMotion.setChecked(false);
         }
     }
@@ -296,9 +357,14 @@ public class MainActivity extends WearableActivity {
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
         }
 
+        /*
+        Notes: 1000000000 Nanosecond = 1000000 Microsecond = 1000 Millisecond = 1 Second
+         */
         @Override
         public void onSensorChanged(SensorEvent event) {
-            if (firstTimestamp == -1) firstTimestamp = event.timestamp;
+            if (firstTimestamp == -1) {
+                firstTimestamp = event.timestamp;   /* nanoseconds */
+            }
             long entryTimestampFixed = event.timestamp - firstTimestamp;
 
             final float floatTimestampMicros = entryTimestampFixed / 1000000f;
@@ -309,7 +375,8 @@ public class MainActivity extends WearableActivity {
             addPoint(getLineData(), X_INDEX, floatTimestampMicros, x);
             addPoint(getLineData(), Y_INDEX, floatTimestampMicros, y);
             addPoint(getLineData(), Z_INDEX, floatTimestampMicros, z);
-            //Log.d("floatTimestampMicros", String.valueOf(floatTimestampMicros));  //for test
+            Log.d("entryTimestampFixed", String.valueOf(entryTimestampFixed));  //for test
+            Log.d("floatTimestampMicros", String.valueOf(floatTimestampMicros));  //for test
             chart.notifyDataSetChanged();
             chart.invalidate();
 
@@ -326,6 +393,7 @@ public class MainActivity extends WearableActivity {
             data.addDataSet(set);
         }
 
+        //each point represented as Entry(x, y axis), dataSetIndex is x-index of chart
         data.addEntry(new Entry(timestamp, value), dataSetIndex);
 
         data.notifyDataChanged();

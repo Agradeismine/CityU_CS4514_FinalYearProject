@@ -17,4 +17,7 @@
         <item>Purple\u0020\u0020</item>
     </string-array>
     <string name="sensor_failed">Sensor listener registration failed</string>
+    <string name="data_saved">Data saved successfully</string>
+    <string name="failed_to_save">Failed to save data</string>
+    <string name="failed_to_save_error">Failed to save data. Error:</string>
 </resources>
