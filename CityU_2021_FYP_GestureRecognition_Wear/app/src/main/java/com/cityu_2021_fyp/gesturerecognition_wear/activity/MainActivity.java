@@ -1,4 +1,4 @@
-package com.cityu_2021_fyp.gesturerecognition_wear;
+package com.cityu_2021_fyp.gesturerecognition_wear.activity;
 
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -13,6 +13,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.activity.WearableActivity;
@@ -30,6 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.cityu_2021_fyp.gesturerecognition_wear.R;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
@@ -52,7 +54,6 @@ import java.util.UUID;
 
 import settings.AppSettings;
 import utils.FileStorage;
-import utils.Label;
 import utils.TimestampAxisFormatter;
 
 public class MainActivity extends WearableActivity {
@@ -62,7 +63,7 @@ public class MainActivity extends WearableActivity {
     private Button listen, listDevices;  //, saveMotion ,send
     private ImageButton saveMotion;
     private ToggleButton recMotion;
-    private Spinner spinLabels;
+    private Spinner labelSpinner;
     private ListView listView;
     private TextView msg_box, status;
     private LinearLayout linLayoutForBlueTooth, linLayoutForRecording;
@@ -229,19 +230,19 @@ public class MainActivity extends WearableActivity {
             public void onClick(View v) {
                 AlertDialog.Builder mBuilder = new AlertDialog.Builder(MainActivity.this);
                 View mView = getLayoutInflater().inflate(R.layout.dialog_spinner, null);
-                mBuilder.setTitle("Save with Color Label");
-                final Spinner mSpinner = (Spinner) mView.findViewById(R.id.labelSpinner);
+                mBuilder.setTitle("Save with Label");
+                labelSpinner = (Spinner) mView.findViewById(R.id.labelSpinner);
                 ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this,
                         android.R.layout.simple_spinner_item,
                         getResources().getStringArray(R.array.colorList));
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                mSpinner.setAdapter(adapter);
+                labelSpinner.setAdapter(adapter);
 
                 mBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         //test code here
-                        Toast.makeText(MainActivity.this, mSpinner.getSelectedItem().toString(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, labelSpinner.getSelectedItem().toString().trim()+" label called", Toast.LENGTH_SHORT).show();
 
                         //real code here
                         saveSelectionData(FileStorage.generateFileName(getCurrentLabel(), System.currentTimeMillis()));
@@ -306,7 +307,10 @@ public class MainActivity extends WearableActivity {
 
     private void saveSelectionData(String fileName) {
         try {
-            FileStorage.saveLineData(new File(settings.getWorkingDir(), fileName), getLineData(), selectedEntryIndex, GESTURE_SAMPLES);
+            /*
+            save file to "/data/data/<application package>/cache"
+            */
+            FileStorage.saveLineData(new File(getApplicationContext().getCacheDir().getAbsolutePath() , fileName), getLineData(), selectedEntryIndex, GESTURE_SAMPLES);
             showToast(getString(R.string.data_saved));
         }
         catch (IOException e) {
@@ -321,9 +325,12 @@ public class MainActivity extends WearableActivity {
     }
 
     private String getCurrentLabel() {
-        Label label = (Label) spinLabels.getSelectedItem();
-        if (label == null) return "{null}";
-        return label.toString().trim(); //remove head and end space
+        String label = (String) labelSpinner.getSelectedItem();
+
+        if (label == null || label.equals(""))
+            return "{null}";
+
+        return label.trim(); //remove head and end space
     }
 
     private void stopRec() {
@@ -611,9 +618,9 @@ public class MainActivity extends WearableActivity {
         @Override
         public void onChartDoubleTapped(MotionEvent me) {
             //set the chart screen
-            //chart.fitScreen();
-            chart.resetZoom();
-
+            chart.fitScreen();
+            //chart.resetZoom();
+            showToast("Zoom reseted");
         }
 
         @Override

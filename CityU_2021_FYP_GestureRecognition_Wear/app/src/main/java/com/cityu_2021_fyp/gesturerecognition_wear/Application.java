@@ -22,7 +22,7 @@ public class Application extends android.app.Application{
         settings.load();
 
         if (settings.getWorkingDir() == null) {
-            File extDir = Environment.getDataDirectory();
+            File extDir = Environment.getStorageDirectory();
             if (extDir != null) {
                 settings.setWorkingDir(extDir.getAbsolutePath());
                 settings.saveDeferred();
