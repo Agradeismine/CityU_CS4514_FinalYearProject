@@ -61,7 +61,7 @@ public class MainActivity extends WearableActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String[] LINE_DESCRIPTIONS = {"X", "Y", "Z"};
     private Button listen, listDevices;  //, saveMotion ,send
-    private ImageButton saveMotion;
+    private ImageButton saveMotion, closeButton;
     private ToggleButton recMotion;
     private Spinner labelSpinner;
     private ListView listView;
@@ -138,6 +138,7 @@ public class MainActivity extends WearableActivity {
         listView = findViewById(R.id.listview);
         msg_box = findViewById(R.id.msg_box);
         status = findViewById(R.id.status);
+        closeButton = findViewById(R.id.closeButton);
         recMotion = findViewById(R.id.recMotion);
         saveMotion = findViewById(R.id.saveMotion); //idea: auto send the file to phone by using bluetooth
         saveMotion.setEnabled(false);
@@ -215,6 +216,10 @@ public class MainActivity extends WearableActivity {
                 ServerClass serverClass = new ServerClass();
                 serverClass.start();
             }
+        });
+
+        closeButton.setOnClickListener(v -> {
+            finish();
         });
 
         recMotion.setOnClickListener(view -> {
@@ -649,6 +654,7 @@ public class MainActivity extends WearableActivity {
             //supportInvalidateOptionsMenu();
             //return current selected part of information
             fillStatus();
+            canSelectedDataSave();
 
             // highlight ending line
             Entry endEntry = getSelectionEndEntry();
@@ -663,6 +669,7 @@ public class MainActivity extends WearableActivity {
             selectedEntryIndex = -1;
             //supportInvalidateOptionsMenu();
             fillStatus();
+            canSelectedDataSave();
         }
     };
 
