@@ -250,7 +250,7 @@ public class MainActivity extends WearableActivity {
                         Toast.makeText(MainActivity.this, labelSpinner.getSelectedItem().toString().trim()+" label called", Toast.LENGTH_SHORT).show();
 
                         //real code here
-                        saveSelectionData(FileStorage.generateFileName(getCurrentLabel(), System.currentTimeMillis()));
+                        sendSelectionData(FileStorage.generateFileName(getCurrentLabel(), System.currentTimeMillis()));
                         moveSelectionToNext();
 
                         dialog.dismiss();   //close dialog and release resources
@@ -310,12 +310,13 @@ public class MainActivity extends WearableActivity {
         fillStatus();
     }
 
-    private void saveSelectionData(String fileName) {
+    private void sendSelectionData(String fileName) {
         try {
             /*
             save file to "/data/data/<application package>/cache"
             */
-            FileStorage.saveLineData(new File(getApplicationContext().getCacheDir().getAbsolutePath() , fileName), getLineData(), selectedEntryIndex, GESTURE_SAMPLES);
+
+            sendReceive.write(FileStorage.saveLineData(new File(getApplicationContext().getCacheDir().getAbsolutePath() , fileName), getLineData(), selectedEntryIndex, GESTURE_SAMPLES).getBytes());
             showToast(getString(R.string.data_saved));
         }
         catch (IOException e) {
@@ -451,12 +452,15 @@ public class MainActivity extends WearableActivity {
             switch (msg.what) {
                 case STATE_LISTENING:
                     status.setText("Listening");
+                    status.setTextColor(Color.WHITE);
                     break;
                 case STATE_CONNECTING:
                     status.setText("Connecting");
+                    status.setTextColor(Color.WHITE);
                     break;
                 case STATE_CONNECTED:
                     status.setText("Connected");
+                    status.setTextColor(Color.GREEN);
                     msg_box.setText("Message");
                     listView.setVisibility(View.GONE);
                     linLayoutForBlueTooth.setVisibility(View.GONE);
@@ -465,6 +469,7 @@ public class MainActivity extends WearableActivity {
                     break;
                 case STATE_CONNECTION_FAILED:
                     status.setText("Connection Failed");
+                    status.setTextColor(Color.RED);
                     break;
                 case STATE_MESSAGE_RECEIVED:
                     byte[] readBuff = (byte[]) msg.obj;

@@ -16,10 +16,10 @@ public class FileStorage {
     }
 
 
-    public static void saveLineData(File file, LineData lineData, int selectedEntryIndex, int length) throws IOException {
+    public static String saveLineData(File file, LineData lineData, int selectedEntryIndex, int length) throws IOException {
         // csv format:
         // timestamp, x, y, z
-
+        String str = null;
         try (FileOutputStream fos = new FileOutputStream(file)){
             OutputStreamWriter osw = new OutputStreamWriter(fos);
             //String header = String.format("index,x,y,z\n");
@@ -35,7 +35,7 @@ public class FileStorage {
 
             float startX = setX.getEntryForIndex(selectedEntryIndex).getX(); // fix and get start time
             for (int i = selectedEntryIndex; i < selectedEntryIndex + length; i++) {
-                String str = String.format(Locale.ROOT, "%f,%f,%f,%f\n",
+                str = String.format(Locale.ROOT, "%f,%f,%f,%f\n",
                         setX.getEntryForIndex(i).getX() - startX,   //current Timestamp of DataSet
                         setX.getEntryForIndex(i).getY(),
                         setY.getEntryForIndex(i).getY(),
@@ -44,5 +44,6 @@ public class FileStorage {
             }
             osw.close();
         }
+        return str;
     }
 }
