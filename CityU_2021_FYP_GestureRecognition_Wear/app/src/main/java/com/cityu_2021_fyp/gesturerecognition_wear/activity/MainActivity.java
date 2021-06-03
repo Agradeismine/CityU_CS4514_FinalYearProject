@@ -15,6 +15,7 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
@@ -49,8 +50,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import settings.AppSettings;
 import utils.FileStorage;
@@ -116,10 +123,9 @@ public class MainActivity extends WearableActivity {
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         //need to comment the following for opening in simulator
-        if(!bluetoothAdapter.isEnabled())
-        {
+        if (!bluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent,REQUEST_ENABLE_BLUETOOTH);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BLUETOOTH);
         }
 
         //init the view before do anything
@@ -246,13 +252,8 @@ public class MainActivity extends WearableActivity {
                 mBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        //test code here
-                        Toast.makeText(MainActivity.this, labelSpinner.getSelectedItem().toString().trim()+" label called", Toast.LENGTH_SHORT).show();
-
-                        //real code here
                         sendSelectionData(FileStorage.generateFileName(getCurrentLabel(), System.currentTimeMillis()));
                         moveSelectionToNext();
-
                         dialog.dismiss();   //close dialog and release resources
                     }
                 });
@@ -292,8 +293,7 @@ public class MainActivity extends WearableActivity {
 
         if (current == dataSet.getEntryCount())
             current = -1;
-        else
-        {
+        else {
             current -= 20;
             if (current < -1) current = -1;
         }
@@ -302,8 +302,7 @@ public class MainActivity extends WearableActivity {
         if (e != null) {
             Highlight h = new Highlight(e.getX(), e.getY(), 0);
             chart.highlightValue(h, true);
-        }
-        else {
+        } else {
             chart.highlightValue(null, true);
         }
 
@@ -312,14 +311,10 @@ public class MainActivity extends WearableActivity {
 
     private void sendSelectionData(String fileName) {
         try {
-            /*
-            save file to "/data/data/<application package>/cache"
-            */
-
-            sendReceive.write(FileStorage.saveLineData(new File(getApplicationContext().getCacheDir().getAbsolutePath() , fileName), getLineData(), selectedEntryIndex, GESTURE_SAMPLES).getBytes());
+            //save file to "/data/data/<application package>/cache"
+            sendReceive.write(FileStorage.saveLineData(new File(getApplicationContext().getCacheDir().getAbsolutePath(), fileName), getLineData(), selectedEntryIndex, GESTURE_SAMPLES));
             showToast(getString(R.string.data_saved));
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             Log.e(TAG, getString(R.string.failed_to_save), e);
             showToast(getString(R.string.failed_to_save_error) + e);
         }
@@ -560,8 +555,8 @@ public class MainActivity extends WearableActivity {
 
     private class SendReceive extends Thread {
         private final BluetoothSocket bluetoothSocket;
-        private final InputStream inputStream;
-        private final OutputStream outputStream;
+        private final InputStream inputStream;      //to receive
+        private final OutputStream outputStream;    //to send
 
         public SendReceive(BluetoothSocket socket) {
             bluetoothSocket = socket;
@@ -593,13 +588,28 @@ public class MainActivity extends WearableActivity {
             }
         }
 
-        public void write(byte[] bytes) {
+        public void write(String motionLog) {
             try {
-                outputStream.write(bytes);
-            } catch (IOException e) {
+                ArrayList<String> toSend = spliteStringToArrayList(motionLog);
+                for (String str : toSend) {
+                    outputStream.write((str + "\n").getBytes());
+                    sleep(50);
+                }
+            } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    private ArrayList<String> spliteStringToArrayList(String motionLog) {
+        ArrayList<String> toSend = new ArrayList<>();
+        Scanner scanner = new Scanner(motionLog);
+        while (scanner.hasNextLine()) {
+            toSend.add(scanner.nextLine());
+        }
+        scanner.close();
+
+        return toSend;
     }
 
     private void setLineData(LineData lineData) {

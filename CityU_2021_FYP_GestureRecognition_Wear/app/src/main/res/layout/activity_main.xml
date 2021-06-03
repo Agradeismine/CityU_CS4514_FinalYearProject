@@ -122,7 +122,6 @@
                 android:layout_marginTop="5dp"
                 android:background="@android:color/darker_gray"
                 android:visibility="visible">
-
             </ListView>
 
             <com.github.mikephil.charting.charts.LineChart
@@ -157,6 +156,5 @@
     <!--        android:layout_height="match_parent"-->
     <!--        android:padding="@dimen/inner_frame_layout_padding"-->
     <!--        app:boxedEdges="all">-->
-
     <!--    </FrameLayout>-->
 </androidx.wear.widget.BoxInsetLayout>

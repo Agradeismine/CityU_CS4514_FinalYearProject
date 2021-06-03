@@ -4,7 +4,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -17,6 +19,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,15 +32,17 @@ import com.cityu_2021_fyp.gesturerecognition_phone.R;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 public class HomeFragment extends Fragment {
 
+    private Context mContext;
     private HomeViewModel homeViewModel;
-    private Button listen,send, listDevices;
+    private Button listen, send, listDevices;
     private ListView listView;
-    private TextView msg_box,status;
+    private TextView msg_box, bluetoothStatus, msgStatus;
     private EditText writeMsg;
 
     BluetoothAdapter bluetoothAdapter;
@@ -46,14 +51,14 @@ public class HomeFragment extends Fragment {
     SendReceive sendReceive;
 
     static final int STATE_LISTENING = 1;
-    static final int STATE_CONNECTING=2;
-    static final int STATE_CONNECTED=3;
-    static final int STATE_CONNECTION_FAILED=4;
-    static final int STATE_MESSAGE_RECEIVED=5;
-    int REQUEST_ENABLE_BLUETOOTH=1;
+    static final int STATE_CONNECTING = 2;
+    static final int STATE_CONNECTED = 3;
+    static final int STATE_CONNECTION_FAILED = 4;
+    static final int STATE_MESSAGE_RECEIVED = 5;
+    int REQUEST_ENABLE_BLUETOOTH = 1;
 
     private static final String APP_NAME = "CityU_2021_FYP_GestureRecognition";
-    private static final UUID MY_UUID=UUID.fromString("8ce235c0-223a-19e0-ac64-0803950c9a66");
+    private static final UUID MY_UUID = UUID.fromString("8ce235c0-223a-19e0-ac64-0803950c9a66");
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -69,12 +74,11 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        bluetoothAdapter=BluetoothAdapter.getDefaultAdapter();
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        if(!bluetoothAdapter.isEnabled())
-        {
+        if (!bluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent,REQUEST_ENABLE_BLUETOOTH);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BLUETOOTH);
         }
 
         implementListeners();
@@ -90,20 +94,18 @@ public class HomeFragment extends Fragment {
                 //show listDevices
                 listView.setVisibility(View.VISIBLE);
 
-                Set<BluetoothDevice> bt=bluetoothAdapter.getBondedDevices();
-                String[] strings=new String[bt.size()];
-                btArray=new BluetoothDevice[bt.size()];
-                int index=0;
+                Set<BluetoothDevice> bt = bluetoothAdapter.getBondedDevices();
+                String[] strings = new String[bt.size()];
+                btArray = new BluetoothDevice[bt.size()];
+                int index = 0;
 
-                if( bt.size()>0)
-                {
-                    for(BluetoothDevice device : bt)
-                    {
-                        btArray[index]= device;
-                        strings[index]=device.getName();
+                if (bt.size() > 0) {
+                    for (BluetoothDevice device : bt) {
+                        btArray[index] = device;
+                        strings[index] = device.getName();
                         index++;
                     }
-                    ArrayAdapter<String> arrayAdapter=new ArrayAdapter<String>(getActivity().getApplicationContext(),android.R.layout.simple_list_item_1,strings);
+                    ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getActivity().getApplicationContext(), android.R.layout.simple_list_item_1, strings);
                     listView.setAdapter(arrayAdapter);
                 }
             }
@@ -112,7 +114,7 @@ public class HomeFragment extends Fragment {
         listen.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ServerClass serverClass=new ServerClass();
+                ServerClass serverClass = new ServerClass();
                 serverClass.start();
             }
         });
@@ -120,46 +122,59 @@ public class HomeFragment extends Fragment {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                ClientClass clientClass=new ClientClass(btArray[i]);
+                ClientClass clientClass = new ClientClass(btArray[i]);
                 clientClass.start();
-                status.setText("Connecting");
+                bluetoothStatus.setText("Connecting");
+                bluetoothStatus.setTextColor(0xe0af1f);
             }
         });
 
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String string= String.valueOf(writeMsg.getText());
+                String string = String.valueOf(writeMsg.getText());
                 sendReceive.write(string.getBytes());
                 writeMsg.getText().clear();
             }
         });
     }
 
-    Handler handler=new Handler(new Handler.Callback() {
+    Handler handler = new Handler(new Handler.Callback() {
         @Override
         public boolean handleMessage(Message msg) {
 
-            switch (msg.what)
-            {
+            switch (msg.what) {
                 case STATE_LISTENING:
-                    status.setText("Listening");
+                    bluetoothStatus.setText("Listening");
+                    bluetoothStatus.setTextColor(0xFFE0AF1F);
                     break;
                 case STATE_CONNECTING:
-                    status.setText("Connecting");
+                    bluetoothStatus.setText("Connecting");
+                    bluetoothStatus.setTextColor(0xFFE0AF1F);
                     break;
                 case STATE_CONNECTED:
-                    status.setText("Connected");
+                    bluetoothStatus.setText("Connected");
+                    bluetoothStatus.setTextColor(Color.GREEN);
                     listView.setVisibility(View.GONE);
                     msg_box.setText("Waiting for message...");
                     break;
                 case STATE_CONNECTION_FAILED:
-                    status.setText("Connection Failed");
+                    bluetoothStatus.setText("Connection Failed");
+                    bluetoothStatus.setTextColor(Color.RED);
                     break;
                 case STATE_MESSAGE_RECEIVED:
-                    byte[] readBuff= (byte[]) msg.obj;
-                    String tempMsg=new String(readBuff,0,msg.arg1);
-                    msg_box.setText(tempMsg);
+                    byte[] readBuff = (byte[]) msg.obj;
+                    String tempMsg = new String(readBuff, 0, msg.arg1);
+                    msgStatus.setHighlightColor(0xFF74bddd);
+                    msgStatus.setText("Receiving...");
+                    if (tempMsg.equalsIgnoreCase("start\n")) {
+                        msg_box.setText("");
+                    } else if (tempMsg.equalsIgnoreCase("end\n")) {
+                        msgStatus.setText("");
+                        Toast.makeText(requireActivity().getApplicationContext(),"Message receive successfully", Toast.LENGTH_SHORT ).show();
+                    } else {
+                        msg_box.append(tempMsg);
+                    }
                     break;
             }
             return true;
@@ -169,40 +184,37 @@ public class HomeFragment extends Fragment {
     private class ServerClass extends Thread {
         private BluetoothServerSocket serverSocket;
 
-        public ServerClass(){
+        public ServerClass() {
             try {
-                serverSocket=bluetoothAdapter.listenUsingRfcommWithServiceRecord(APP_NAME,MY_UUID);
+                serverSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord(APP_NAME, MY_UUID);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        public void run()
-        {
-            BluetoothSocket socket=null;
+        public void run() {
+            BluetoothSocket socket = null;
 
-            while (socket==null)
-            {
+            while (socket == null) {
                 try {
-                    Message message=Message.obtain();
-                    message.what=STATE_CONNECTING;
+                    Message message = Message.obtain();
+                    message.what = STATE_CONNECTING;
                     handler.sendMessage(message);
 
-                    socket=serverSocket.accept();
+                    socket = serverSocket.accept();
                 } catch (IOException e) {
                     e.printStackTrace();
-                    Message message=Message.obtain();
-                    message.what=STATE_CONNECTION_FAILED;
+                    Message message = Message.obtain();
+                    message.what = STATE_CONNECTION_FAILED;
                     handler.sendMessage(message);
                 }
 
-                if(socket!=null)
-                {
-                    Message message=Message.obtain();
-                    message.what=STATE_CONNECTED;
+                if (socket != null) {
+                    Message message = Message.obtain();
+                    message.what = STATE_CONNECTED;
                     handler.sendMessage(message);
 
-                    sendReceive=new SendReceive(socket);
+                    sendReceive = new SendReceive(socket);
                     sendReceive.start();
 
                     break;
@@ -211,83 +223,75 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private class ClientClass extends Thread
-    {
+    private class ClientClass extends Thread {
         private BluetoothDevice device;
         private BluetoothSocket socket;
 
-        public ClientClass (BluetoothDevice device1)
-        {
-            device=device1;
+        public ClientClass(BluetoothDevice device1) {
+            device = device1;
 
             try {
-                socket=device.createRfcommSocketToServiceRecord(MY_UUID);
+                socket = device.createRfcommSocketToServiceRecord(MY_UUID);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        public void run()
-        {
+        public void run() {
             try {
                 socket.connect();
-                Message message=Message.obtain();
-                message.what=STATE_CONNECTED;
+                Message message = Message.obtain();
+                message.what = STATE_CONNECTED;
                 handler.sendMessage(message);
 
-                sendReceive=new SendReceive(socket);
+                sendReceive = new SendReceive(socket);
                 sendReceive.start();
 
             } catch (IOException e) {
                 e.printStackTrace();
-                Message message=Message.obtain();
-                message.what=STATE_CONNECTION_FAILED;
+                Message message = Message.obtain();
+                message.what = STATE_CONNECTION_FAILED;
                 handler.sendMessage(message);
             }
         }
     }
 
-    private class SendReceive extends Thread
-    {
+    private class SendReceive extends Thread {
         private final BluetoothSocket bluetoothSocket;
         private final InputStream inputStream;
         private final OutputStream outputStream;
 
-        public SendReceive (BluetoothSocket socket)
-        {
-            bluetoothSocket=socket;
-            InputStream tempIn=null;
-            OutputStream tempOut=null;
+        public SendReceive(BluetoothSocket socket) {
+            bluetoothSocket = socket;
+            InputStream tempIn = null;
+            OutputStream tempOut = null;
 
             try {
-                tempIn=bluetoothSocket.getInputStream();
-                tempOut=bluetoothSocket.getOutputStream();
+                tempIn = bluetoothSocket.getInputStream();
+                tempOut = bluetoothSocket.getOutputStream();
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            inputStream=tempIn;
-            outputStream=tempOut;
+            inputStream = tempIn;
+            outputStream = tempOut;
         }
 
-        public void run()
-        {
-            byte[] buffer=new byte[1024];
+        public void run() {
+            byte[] buffer = new byte[1024];
             int bytes;
 
-            while (true)
-            {
+            while (true) {
                 try {
-                    bytes=inputStream.read(buffer);
-                    handler.obtainMessage(STATE_MESSAGE_RECEIVED,bytes,-1,buffer).sendToTarget();
+                    bytes = inputStream.read(buffer);
+                    handler.obtainMessage(STATE_MESSAGE_RECEIVED, bytes, -1, buffer).sendToTarget();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
 
-        public void write(byte[] bytes)
-        {
+        public void write(byte[] bytes) {
             try {
                 outputStream.write(bytes);
             } catch (IOException e) {
@@ -302,7 +306,8 @@ public class HomeFragment extends Fragment {
         send = root.findViewById(R.id.send);
         listDevices = root.findViewById(R.id.listDevices);
         listView = root.findViewById(R.id.listview);
-        status = root.findViewById(R.id.status);
+        bluetoothStatus = root.findViewById(R.id.bluetoothStatus);
+        msgStatus = root.findViewById(R.id.msgStatus);
         writeMsg = root.findViewById(R.id.writemsg);
     }
 }
