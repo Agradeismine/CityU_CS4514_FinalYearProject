@@ -165,7 +165,7 @@ public class HomeFragment extends Fragment {
                 case STATE_MESSAGE_RECEIVED:
                     byte[] readBuff = (byte[]) msg.obj;
                     String tempMsg = new String(readBuff, 0, msg.arg1);
-                    msgStatus.setHighlightColor(0xFF74bddd);
+                    msgStatus.setTextColor(0xFF74BDDD);
                     msgStatus.setText("Receiving...");
                     if (tempMsg.equalsIgnoreCase("start\n")) {
                         msg_box.setText("");

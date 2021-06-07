@@ -94,5 +94,6 @@
         android:layout_alignParentEnd="true"
         android:layout_marginTop="14dp"
         android:layout_marginEnd="14dp"
-        android:text="No Message Received." />
+        android:text="No Message Received."
+        android:textStyle="bold" />
 </RelativeLayout>
