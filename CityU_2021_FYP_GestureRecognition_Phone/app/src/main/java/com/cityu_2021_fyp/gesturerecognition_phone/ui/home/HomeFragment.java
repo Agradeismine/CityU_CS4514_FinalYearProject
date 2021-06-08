@@ -76,14 +76,30 @@ public class HomeFragment extends Fragment {
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
+        implementListeners();
+
+        return root;
+    }
+
+    private void checkPermission() {
         if (!bluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BLUETOOTH);
         }
+    }
 
-        implementListeners();
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // TODO Auto-generated method stub
+//        if(requestCode == REQUEST_ENABLE_BLUETOOTH){
+//            //do something
+//        }
+    }
 
-        return root;
+    @Override
+    public void onResume() {
+        super.onResume();
+        checkPermission();
     }
 
     private void implementListeners() {
@@ -306,6 +322,7 @@ public class HomeFragment extends Fragment {
         send = root.findViewById(R.id.send);
         listDevices = root.findViewById(R.id.listDevices);
         listView = root.findViewById(R.id.listview);
+        listView.setVisibility(View.INVISIBLE);
         bluetoothStatus = root.findViewById(R.id.bluetoothStatus);
         msgStatus = root.findViewById(R.id.msgStatus);
         writeMsg = root.findViewById(R.id.writemsg);

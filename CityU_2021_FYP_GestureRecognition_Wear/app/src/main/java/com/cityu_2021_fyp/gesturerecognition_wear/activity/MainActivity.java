@@ -122,20 +122,24 @@ public class MainActivity extends WearableActivity {
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        //need to comment the following for opening in simulator
-        if (!bluetoothAdapter.isEnabled()) {
-            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent, REQUEST_ENABLE_BLUETOOTH);
-        }
 
         //init the view before do anything
         findViewByIdes();
         implementViewListeners();
     }
 
+    private void checkPermission() {
+        //need to comment the following for opening in simulator
+        if (!bluetoothAdapter.isEnabled()) {
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BLUETOOTH);
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
+        checkPermission();
     }
 
     private void findViewByIdes() {
