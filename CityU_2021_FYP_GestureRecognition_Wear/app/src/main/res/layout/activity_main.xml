@@ -43,24 +43,24 @@
                     </TableRow>
 
 
-<!--                    <TableRow-->
-<!--                        android:layout_width="match_parent"-->
-<!--                        android:layout_height="match_parent"-->
-<!--                        android:gravity="center">-->
+                    <!--                    <TableRow-->
+                    <!--                        android:layout_width="match_parent"-->
+                    <!--                        android:layout_height="match_parent"-->
+                    <!--                        android:gravity="center">-->
 
-<!--                        <TextView-->
-<!--                            android:id="@+id/textView13"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:text="TextView" />-->
+                    <!--                        <TextView-->
+                    <!--                            android:id="@+id/textView13"-->
+                    <!--                            android:layout_width="wrap_content"-->
+                    <!--                            android:layout_height="wrap_content"-->
+                    <!--                            android:text="TextView" />-->
 
-<!--                        <TextView-->
-<!--                            android:id="@+id/textView24"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:text="TextView" />-->
+                    <!--                        <TextView-->
+                    <!--                            android:id="@+id/textView24"-->
+                    <!--                            android:layout_width="wrap_content"-->
+                    <!--                            android:layout_height="wrap_content"-->
+                    <!--                            android:text="TextView" />-->
 
-<!--                    </TableRow>-->
+                    <!--                    </TableRow>-->
 
                 </TableLayout>
 
@@ -131,11 +131,16 @@
             </com.github.mikephil.charting.charts.LineChart>
 
             <TextView
+                android:id="@+id/textLogs"
+                android:layout_width="match_parent"
+                android:layout_height="180dp" />
+
+            <TextView
                 android:id="@+id/msg_box"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
-                android:layout_marginBottom="35dp"
+                android:layout_marginBottom="40dp"
                 android:hint="Waiting for Connection📱🔗⌚"
                 android:textAlignment="center"
                 android:textColor="?android:attr/textColorLink"

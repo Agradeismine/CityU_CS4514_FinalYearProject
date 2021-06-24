@@ -13,10 +13,8 @@ import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,25 +23,22 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.cityu_2021_fyp.gesturerecognition_phone.R;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 public class HomeFragment extends Fragment {
 
     private Context mContext;
-    private HomeViewModel homeViewModel;
-    private Button listen, send, listDevices;
+    private Button listen, listDevices;
     private ListView listView;
     private TextView msg_box, bluetoothStatus, msgStatus;
-    private EditText writeMsg;
 
     BluetoothAdapter bluetoothAdapter;
     BluetoothDevice[] btArray;
@@ -62,21 +57,21 @@ public class HomeFragment extends Fragment {
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        homeViewModel =
-                ViewModelProviders.of(this).get(HomeViewModel.class);
+        //HomeViewModel homeViewModel = ViewModelProviders.of(this).get(HomeViewModel.class);
         View root = inflater.inflate(R.layout.fragment_home, container, false);
         findViewByIdes(root);
 
-        homeViewModel.getText().observe(getViewLifecycleOwner(), new Observer<String>() {
-            @Override
-            public void onChanged(@Nullable String s) {
-                msg_box.setText(s);
-            }
-        });
+//        homeViewModel.getText().observe(getViewLifecycleOwner(), new Observer<String>() {
+//            @Override
+//            public void onChanged(@Nullable String s) {
+//                msg_box.setText(s);
+//            }
+//        });
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         implementListeners();
+        mContext = requireActivity().getApplicationContext();
 
         return root;
     }
@@ -104,54 +99,36 @@ public class HomeFragment extends Fragment {
 
     private void implementListeners() {
 
-        listDevices.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //show listDevices
-                listView.setVisibility(View.VISIBLE);
+        listDevices.setOnClickListener(view -> {
+            //show listDevices
+            listView.setVisibility(View.VISIBLE);
 
-                Set<BluetoothDevice> bt = bluetoothAdapter.getBondedDevices();
-                String[] strings = new String[bt.size()];
-                btArray = new BluetoothDevice[bt.size()];
-                int index = 0;
+            Set<BluetoothDevice> bt = bluetoothAdapter.getBondedDevices();
+            String[] strings = new String[bt.size()];
+            btArray = new BluetoothDevice[bt.size()];
+            int index = 0;
 
-                if (bt.size() > 0) {
-                    for (BluetoothDevice device : bt) {
-                        btArray[index] = device;
-                        strings[index] = device.getName();
-                        index++;
-                    }
-                    ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(getActivity().getApplicationContext(), android.R.layout.simple_list_item_1, strings);
-                    listView.setAdapter(arrayAdapter);
+            if (bt.size() > 0) {
+                for (BluetoothDevice device : bt) {
+                    btArray[index] = device;
+                    strings[index] = device.getName();
+                    index++;
                 }
+                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(getActivity().getApplicationContext(), android.R.layout.simple_list_item_1, strings);
+                listView.setAdapter(arrayAdapter);
             }
         });
 
-        listen.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                ServerClass serverClass = new ServerClass();
-                serverClass.start();
-            }
+        listen.setOnClickListener(view -> {
+            ServerClass serverClass = new ServerClass();
+            serverClass.start();
         });
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                ClientClass clientClass = new ClientClass(btArray[i]);
-                clientClass.start();
-                bluetoothStatus.setText("Connecting");
-                bluetoothStatus.setTextColor(0xe0af1f);
-            }
-        });
-
-        send.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String string = String.valueOf(writeMsg.getText());
-                sendReceive.write(string.getBytes());
-                writeMsg.getText().clear();
-            }
+        listView.setOnItemClickListener((adapterView, view, i, l) -> {
+            ClientClass clientClass = new ClientClass(btArray[i]);
+            clientClass.start();
+            bluetoothStatus.setText("Connecting");
+            bluetoothStatus.setTextColor(0xe0af1f);
         });
     }
 
@@ -187,7 +164,7 @@ public class HomeFragment extends Fragment {
                         msg_box.setText("");
                     } else if (tempMsg.equalsIgnoreCase("end\n")) {
                         msgStatus.setText("");
-                        Toast.makeText(requireActivity().getApplicationContext(),"Message receive successfully", Toast.LENGTH_SHORT ).show();
+                        Toast.makeText(mContext, "Message receive successfully", Toast.LENGTH_SHORT).show();
                     } else {
                         msg_box.append(tempMsg);
                     }
@@ -196,7 +173,7 @@ public class HomeFragment extends Fragment {
             return true;
         }
     });
-
+    //Server side
     private class ServerClass extends Thread {
         private BluetoothServerSocket serverSocket;
 
@@ -207,11 +184,11 @@ public class HomeFragment extends Fragment {
                 e.printStackTrace();
             }
         }
-
+        //continuously waiting for a device connection until paired with another
         public void run() {
             BluetoothSocket socket = null;
 
-            while (socket == null) {
+            while (true) {
                 try {
                     Message message = Message.obtain();
                     message.what = STATE_CONNECTING;
@@ -247,6 +224,7 @@ public class HomeFragment extends Fragment {
             device = device1;
 
             try {
+                //find
                 socket = device.createRfcommSocketToServiceRecord(MY_UUID);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -275,22 +253,18 @@ public class HomeFragment extends Fragment {
     private class SendReceive extends Thread {
         private final BluetoothSocket bluetoothSocket;
         private final InputStream inputStream;
-        private final OutputStream outputStream;
 
         public SendReceive(BluetoothSocket socket) {
             bluetoothSocket = socket;
             InputStream tempIn = null;
-            OutputStream tempOut = null;
 
             try {
                 tempIn = bluetoothSocket.getInputStream();
-                tempOut = bluetoothSocket.getOutputStream();
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
             inputStream = tempIn;
-            outputStream = tempOut;
         }
 
         public void run() {
@@ -306,25 +280,15 @@ public class HomeFragment extends Fragment {
                 }
             }
         }
-
-        public void write(byte[] bytes) {
-            try {
-                outputStream.write(bytes);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     private void findViewByIdes(View root) {
         msg_box = root.findViewById(R.id.msg);
         listen = root.findViewById(R.id.listen);
-        send = root.findViewById(R.id.send);
         listDevices = root.findViewById(R.id.listDevices);
         listView = root.findViewById(R.id.listview);
         listView.setVisibility(View.INVISIBLE);
         bluetoothStatus = root.findViewById(R.id.bluetoothStatus);
         msgStatus = root.findViewById(R.id.msgStatus);
-        writeMsg = root.findViewById(R.id.writemsg);
     }
 }

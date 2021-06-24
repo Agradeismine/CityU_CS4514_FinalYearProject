@@ -20,5 +20,5 @@ In this final step, you'll use everything: the debugger, the phone, and the watc
 	1: 	"adb forward tcp:4444 localabstract:/adb-hub"
 		or
 		"adb -s 243e016f forward tcp:4444 localabstract:/adb-hub"
-	2: 1adb connect 127.0.0.1:4444
+	2: adb connect 127.0.0.1:4444
 	

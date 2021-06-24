@@ -13,9 +13,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
@@ -51,13 +49,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import settings.AppSettings;
 import utils.FileStorage;
@@ -140,6 +134,12 @@ public class MainActivity extends WearableActivity {
     protected void onResume() {
         super.onResume();
         checkPermission();
+    }
+
+    @Override
+    protected void onStop() {
+        sensorManager.unregisterListener(sensorEventListener);
+        super.onStop();
     }
 
     private void findViewByIdes() {
@@ -284,20 +284,28 @@ public class MainActivity extends WearableActivity {
 //        });
     }
 
+    //Implementation:
+    //1. find the absolute value of the front X entry is greater than 3(means that there is a big motion)
+    //2. then rewind backward 20 samples for better capturing the whole selection.
     private void moveSelectionToNext() {
         int current = selectedEntryIndex != -1 ? selectedEntryIndex : 0;
         current += GESTURE_SAMPLES;
 
         ILineDataSet dataSet = getLineData().getDataSetByIndex(0);
+        //loop until find a motion value which is larger than 3 in entry
         while (current < dataSet.getEntryCount()) {
             Entry e = dataSet.getEntryForIndex(current);
-            if (Math.abs(e.getY()) > 3) break;
+            if (Math.abs(e.getY()) > 3) {
+                break;
+            }
             current++;
         }
-
-        if (current == dataSet.getEntryCount())
+        //dont find the entry value which is larger than 3
+        if (current == dataSet.getEntryCount()){
             current = -1;
+        }
         else {
+            //move back 20 entry
             current -= 20;
             if (current < -1) current = -1;
         }
@@ -359,7 +367,7 @@ public class MainActivity extends WearableActivity {
             firstTimestamp = -1;
             fileNameTimestamp = System.currentTimeMillis();
             chart.highlightValue(null, true);
-            recStarted = sensorManager.registerListener(sensorEventListener, accelerometer, GESTURE_DURATION_MS / GESTURE_SAMPLES);
+            recStarted = sensorManager.registerListener(sensorEventListener, accelerometer, GESTURE_DURATION_MS / GESTURE_SAMPLES ); //sampling rate of the sensor: GESTURE_DURATION_MS / GESTURE_SAMPLES
         }
         return recStarted;
     }
@@ -597,7 +605,7 @@ public class MainActivity extends WearableActivity {
                 ArrayList<String> toSend = spliteStringToArrayList(motionLog);
                 for (String str : toSend) {
                     outputStream.write((str + "\n").getBytes());
-                    sleep(50);
+                    sleep(25);
                 }
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
@@ -673,7 +681,6 @@ public class MainActivity extends WearableActivity {
             //supportInvalidateOptionsMenu();
             //return current selected part of information
             fillStatus();
-            canSelectedDataSave();
 
             // highlight ending line
             Entry endEntry = getSelectionEndEntry();
@@ -692,11 +699,10 @@ public class MainActivity extends WearableActivity {
         }
     };
 
-    private boolean canSelectedDataSave() {
+    private void canSelectedDataSave() {
         boolean isSampleSelected = isSampleSelected();
         saveMotion.setEnabled(isSampleSelected());
         saveMotion.setImageAlpha(isSampleSelected ? 255 : 70);    //change button color if isSampleSelected
-        return isSampleSelected;
     }
 
     private Entry getSelectionEndEntry() {
