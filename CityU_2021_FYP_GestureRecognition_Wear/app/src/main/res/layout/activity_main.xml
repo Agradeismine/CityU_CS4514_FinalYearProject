@@ -11,6 +11,7 @@
     tools:deviceIds="wear">
 
     <ScrollView
+        android:id="@+id/globalScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -96,7 +97,12 @@
                 android:layout_height="match_parent"
                 android:gravity="center_horizontal"
                 android:orientation="horizontal">
-
+                <ImageButton
+                    android:id="@+id/detectMotion"
+                    android:layout_width="35dp"
+                    android:layout_height="35sp"
+                    android:src="@drawable/ic_hand_detect"
+                    android:contentDescription="@string/button_for_hand_detection" />
                 <ToggleButton
                     android:id="@+id/recMotion"
                     android:layout_width="65dp"
@@ -131,17 +137,12 @@
             </com.github.mikephil.charting.charts.LineChart>
 
             <TextView
-                android:id="@+id/textLogs"
-                android:layout_width="match_parent"
-                android:layout_height="180dp" />
-
-            <TextView
                 android:id="@+id/msg_box"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
                 android:layout_marginBottom="40dp"
-                android:hint="Waiting for Connection📱🔗⌚"
+                android:text="@string/waiting_for_connection"
                 android:textAlignment="center"
                 android:textColor="?android:attr/textColorLink"
                 android:textSize="16sp"

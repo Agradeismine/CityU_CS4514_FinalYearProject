@@ -19,11 +19,17 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 repositories {
     maven { url 'https://jitpack.io' }
+    maven { url "https://dl.bintray.com/rii/maven/" }
 }
+
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
@@ -33,7 +39,10 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation 'com.github.PhilJay:MPAndroidChart:v3.0.2'
-
     implementation 'androidx.wear:wear:1.1.0'
+    //implementation 'uk.co.lemberg:motiondetectionlib:1.0.0'
+    implementation project(path: ':motiondetectionlib')
+
     compileOnly 'com.google.android.wearable:wearable:2.8.1'
+
 }

@@ -25,6 +25,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,12 +49,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.UUID;
 
 import settings.AppSettings;
+import uk.co.lemberg.motiondetectionlib.MotionDetector;
 import utils.FileStorage;
 import utils.TimestampAxisFormatter;
 
@@ -62,7 +66,7 @@ public class MainActivity extends WearableActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String[] LINE_DESCRIPTIONS = {"X", "Y", "Z"};
     private Button listen, listDevices;  //, saveMotion ,send
-    private ImageButton saveMotion, closeButton;
+    private ImageButton detectMotion, saveMotion, closeButton;
     private ToggleButton recMotion;
     private Spinner labelSpinner;
     private ListView listView;
@@ -92,7 +96,7 @@ public class MainActivity extends WearableActivity {
 
     private SensorManager sensorManager;
     private Sensor accelerometer;
-    private boolean recStarted = false;
+    private boolean recStarted, detectStarted = false;
     private static final int X_INDEX = 0;
     private static final int Y_INDEX = 1;
     private static final int Z_INDEX = 2;
@@ -102,6 +106,12 @@ public class MainActivity extends WearableActivity {
     private static final String APP_NAME = "CityU_2021_FYP_GestureRecognition";
     private static final UUID MY_UUID = UUID.fromString("8ce235c0-223a-19e0-ac64-0803950c9a66");
     private long fileNameTimestamp = -1;
+
+    private MotionDetector motionDetector;
+    private DateFormat dateFormat;
+    private DateFormat timeFormat;
+    private ScrollView globalScrollView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -139,16 +149,24 @@ public class MainActivity extends WearableActivity {
     @Override
     protected void onStop() {
         sensorManager.unregisterListener(sensorEventListener);
+        motionDetector.stop();
         super.onStop();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
     private void findViewByIdes() {
+        globalScrollView = findViewById(R.id.globalScrollView);
         listen = findViewById(R.id.listen);
         listDevices = findViewById(R.id.listDevices);
         listView = findViewById(R.id.listview);
         msg_box = findViewById(R.id.msg_box);
         status = findViewById(R.id.status);
         closeButton = findViewById(R.id.closeButton);
+        detectMotion = findViewById(R.id.detectMotion);
         recMotion = findViewById(R.id.recMotion);
         saveMotion = findViewById(R.id.saveMotion); //idea: auto send the file to phone by using bluetooth
         saveMotion.setEnabled(false);
@@ -223,7 +241,7 @@ public class MainActivity extends WearableActivity {
         listen.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ServerClass serverClass = new ServerClass();
+                ServerClass serverClass=new ServerClass();
                 serverClass.start();
             }
         });
@@ -235,9 +253,35 @@ public class MainActivity extends WearableActivity {
         recMotion.setOnClickListener(view -> {
             if (recStarted) {
                 stopRec();
+                detectMotion.setEnabled(true);
             } else {
                 startRec();
+                detectMotion.setEnabled(false);
+
             }
+        });
+
+        detectMotion.setOnClickListener(v -> {
+            if(detectStarted){
+                motionDetector.stop();
+                detectStarted = !detectStarted;
+                showToast(getString(R.string.hand_detect_stop));
+
+            }else{
+                try {
+                    motionDetector.start();
+                    showToast(getString(R.string.hand_detect_start));
+                    msg_box.setText("");
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                    showToast("Failed to start motion detector. Error:" + e);
+                }
+                detectStarted = !detectStarted;
+            }
+
+
+
         });
 
         saveMotion.setOnClickListener(new View.OnClickListener() {
@@ -275,6 +319,8 @@ public class MainActivity extends WearableActivity {
             }
         });
 
+        motionDetector = new MotionDetector(this, gestureListener);
+
 //        send.setOnClickListener(new View.OnClickListener() {    //no send button at this time.
 //            @Override
 //            public void onClick(View view) {
@@ -301,10 +347,9 @@ public class MainActivity extends WearableActivity {
             current++;
         }
         //dont find the entry value which is larger than 3
-        if (current == dataSet.getEntryCount()){
+        if (current == dataSet.getEntryCount()) {
             current = -1;
-        }
-        else {
+        } else {
             //move back 20 entry
             current -= 20;
             if (current < -1) current = -1;
@@ -367,7 +412,7 @@ public class MainActivity extends WearableActivity {
             firstTimestamp = -1;
             fileNameTimestamp = System.currentTimeMillis();
             chart.highlightValue(null, true);
-            recStarted = sensorManager.registerListener(sensorEventListener, accelerometer, GESTURE_DURATION_MS / GESTURE_SAMPLES ); //sampling rate of the sensor: GESTURE_DURATION_MS / GESTURE_SAMPLES
+            recStarted = sensorManager.registerListener(sensorEventListener, accelerometer, GESTURE_DURATION_MS / GESTURE_SAMPLES); //sampling rate of the sensor: GESTURE_DURATION_MS / GESTURE_SAMPLES
         }
         return recStarted;
     }
@@ -504,6 +549,7 @@ public class MainActivity extends WearableActivity {
 
             while (socket == null) {
                 try {
+                    Log.d("Listen Button Connection","CONNECTING...");
                     Message message = Message.obtain();
                     message.what = STATE_CONNECTING;
                     handler.sendMessage(message);
@@ -514,6 +560,8 @@ public class MainActivity extends WearableActivity {
                     Message message = Message.obtain();
                     message.what = STATE_CONNECTION_FAILED;
                     handler.sendMessage(message);
+                } catch (Exception e){
+                    e.printStackTrace();
                 }
 
                 if (socket != null) {
@@ -523,7 +571,7 @@ public class MainActivity extends WearableActivity {
 
                     sendReceive = new SendReceive(socket);
                     sendReceive.start();
-                    Log.d("isRunning", "Hi, socket is fine!");
+                    Log.d("Listen Button Connection", "CONNECTED! Hi, socket is fine!");
                     break;
                 } else {
                     Log.d("isRunning", "Hi, socket is null! :(");
@@ -718,6 +766,36 @@ public class MainActivity extends WearableActivity {
         msg_box.setText(formatStatsText());
     }
 
+    private final MotionDetector.Listener gestureListener = new MotionDetector.Listener() {
+        @Override
+        public void onGestureRecognized(MotionDetector.GestureType gestureType) {
+            showToast(gestureType.toString());
+            addLog("Gesture detected: " + gestureType);
+            Log.d(TAG, "Gesture detected: " + gestureType);
+        }
+    };
+
+    private void addLog(String str) {
+        Date date = new Date();
+        String logStr = String.format("[%s %s] %s\n", getDateFormat().format(date), getTimeFormat().format(date), str);
+        msg_box.append(logStr);
+        globalScrollView.fullScroll(View.FOCUS_DOWN);
+    }
+
+    private DateFormat getTimeFormat() {
+        if (timeFormat == null) {
+            timeFormat = android.text.format.DateFormat.getTimeFormat(this);
+        }
+        return timeFormat;
+    }
+
+    private DateFormat getDateFormat() {
+        if (dateFormat == null) {
+            dateFormat = android.text.format.DateFormat.getDateFormat(this);
+        }
+        return dateFormat;
+    }
+
     private String formatStatsText() {
         return String.format("Pos: %s/%s s\nSamples: %d", getXLabelAtHighlight(), getXLabelAtEnd(), getSamplesCount());
     }
@@ -737,6 +815,5 @@ public class MainActivity extends WearableActivity {
         if (getLineData().getDataSetCount() == 0) return 0;
         return getLineData().getDataSetByIndex(0).getEntryCount();
     }
-
 
 }

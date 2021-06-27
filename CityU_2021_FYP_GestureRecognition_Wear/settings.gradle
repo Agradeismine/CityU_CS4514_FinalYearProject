@@ -1,2 +1,3 @@
 include ':app'
 rootProject.name = "CityU_2021_FYP_GestureRecognition_Wear"
+include ':motiondetectionlib'
