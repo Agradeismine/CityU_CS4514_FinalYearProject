@@ -1,5 +1,6 @@
 package com.cityu_2021_fyp.gesturerecognition_phone.ui.home;
 
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
@@ -26,10 +27,13 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelProviders;
 
+import com.cityu_2021_fyp.gesturerecognition_phone.LoadingDialog;
+import com.cityu_2021_fyp.gesturerecognition_phone.MainActivity;
 import com.cityu_2021_fyp.gesturerecognition_phone.R;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -55,6 +59,8 @@ public class HomeFragment extends Fragment {
     private static final String APP_NAME = "CityU_2021_FYP_GestureRecognition";
     private static final UUID MY_UUID = UUID.fromString("8ce235c0-223a-19e0-ac64-0803950c9a66");
 
+    LoadingDialog loadingDialog;
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         //HomeViewModel homeViewModel = ViewModelProviders.of(this).get(HomeViewModel.class);
@@ -67,6 +73,8 @@ public class HomeFragment extends Fragment {
 //                msg_box.setText(s);
 //            }
 //        });
+
+        loadingDialog = new LoadingDialog(getActivity());
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -128,7 +136,7 @@ public class HomeFragment extends Fragment {
             ClientClass clientClass = new ClientClass(btArray[i]);
             clientClass.start();
             bluetoothStatus.setText("Connecting");
-            bluetoothStatus.setTextColor(0xe0af1f);
+            bluetoothStatus.setTextColor(0xFFE0AF1F);
         });
     }
 
@@ -144,6 +152,7 @@ public class HomeFragment extends Fragment {
                 case STATE_CONNECTING:
                     bluetoothStatus.setText("Connecting");
                     bluetoothStatus.setTextColor(0xFFE0AF1F);
+                    msg_box.setText("");
                     break;
                 case STATE_CONNECTED:
                     bluetoothStatus.setText("Connected");
@@ -154,16 +163,19 @@ public class HomeFragment extends Fragment {
                 case STATE_CONNECTION_FAILED:
                     bluetoothStatus.setText("Connection Failed");
                     bluetoothStatus.setTextColor(Color.RED);
+                    msg_box.setText(R.string.waiting_for_connection);
                     break;
                 case STATE_MESSAGE_RECEIVED:
                     byte[] readBuff = (byte[]) msg.obj;
                     String tempMsg = new String(readBuff, 0, msg.arg1);
                     msgStatus.setTextColor(0xFF74BDDD);
                     msgStatus.setText("Receiving...");
-                    if (tempMsg.equalsIgnoreCase("start\n")) {
+                    if (tempMsg.equalsIgnoreCase("Start\n")) {
                         msg_box.setText("");
-                    } else if (tempMsg.equalsIgnoreCase("end\n")) {
+                        loadingDialog.startLoadingDialog();
+                    } else if (tempMsg.equalsIgnoreCase("End\n")) {
                         msgStatus.setText("");
+                        loadingDialog.dismissDialog();
                         Toast.makeText(mContext, "Message receive successfully", Toast.LENGTH_SHORT).show();
                     } else {
                         msg_box.append(tempMsg);
@@ -283,7 +295,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void findViewByIdes(View root) {
-        msg_box = root.findViewById(R.id.msg);
+        msg_box = root.findViewById(R.id.msg_box);
         listen = root.findViewById(R.id.listen);
         listDevices = root.findViewById(R.id.listDevices);
         listView = root.findViewById(R.id.listview);

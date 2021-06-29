@@ -1,5 +1,7 @@
 package utils;
 
+import android.util.Log;
+
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
@@ -17,14 +19,15 @@ public class FileStorage {
 
 
     public static String saveLineData(File file, LineData lineData, int selectedEntryIndex, int length) throws IOException {
-        StringBuilder toSend= new StringBuilder("Start\n");
+        StringBuilder toSend;
         // csv format:
         // timestamp, x, y, z
         try (FileOutputStream fos = new FileOutputStream(file)){
             OutputStreamWriter osw = new OutputStreamWriter(fos);
             //String header = String.format("index,x,y,z\n");
-            //osw.write(header);
-
+            toSend= new StringBuilder("Start\n");
+            osw.write(String.valueOf(toSend));
+            Log.d("First Line of osw.write", String.valueOf(toSend));
             //This is the whole X,Y,Z Line
             ILineDataSet setX = lineData.getDataSetByIndex(0);
             ILineDataSet setY = lineData.getDataSetByIndex(1);
@@ -43,9 +46,13 @@ public class FileStorage {
                 osw.write(str);
                 toSend.append(str);
             }
-            toSend.append("end\n");
+            toSend.append("End\n");
+            osw.write("End\n");
             osw.close();
 
+
+            Log.d("selectedEntryIndex: ", String.valueOf(selectedEntryIndex));
+            Log.d("length: ", String.valueOf(length));
         }
         return toSend.toString();
     }

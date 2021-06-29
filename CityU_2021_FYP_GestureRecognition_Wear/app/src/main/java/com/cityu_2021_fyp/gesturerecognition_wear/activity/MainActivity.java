@@ -235,6 +235,7 @@ public class MainActivity extends WearableActivity {
                 ClientClass clientClass = new ClientClass(btArray[i]);
                 clientClass.start();
                 status.setText("Connecting");
+                status.setTextColor(0xFFE0AF1F);
             }
         });
 
@@ -440,8 +441,8 @@ public class MainActivity extends WearableActivity {
             addPoint(getLineData(), X_INDEX, floatTimestampMicros, x);
             addPoint(getLineData(), Y_INDEX, floatTimestampMicros, y);
             addPoint(getLineData(), Z_INDEX, floatTimestampMicros, z);
-            Log.d("entryTimestampFixed", String.valueOf(entryTimestampFixed));  //for test
-            Log.d("floatTimestampMicros", String.valueOf(floatTimestampMicros));  //for test
+            //Log.d("entryTimestampFixed", String.valueOf(entryTimestampFixed));  //for test
+            //Log.d("floatTimestampMicros", String.valueOf(floatTimestampMicros));  //for test
             chart.notifyDataSetChanged();
             chart.invalidate();
 
@@ -504,11 +505,11 @@ public class MainActivity extends WearableActivity {
             switch (msg.what) {
                 case STATE_LISTENING:
                     status.setText("Listening");
-                    status.setTextColor(Color.WHITE);
+                    status.setTextColor(0xFFE0AF1F);
                     break;
                 case STATE_CONNECTING:
                     status.setText("Connecting");
-                    status.setTextColor(Color.WHITE);
+                    status.setTextColor(0xFFE0AF1F);
                     break;
                 case STATE_CONNECTED:
                     status.setText("Connected");
@@ -650,11 +651,14 @@ public class MainActivity extends WearableActivity {
 
         public void write(String motionLog) {
             try {
+                Log.d("motionLog", motionLog);
                 ArrayList<String> toSend = spliteStringToArrayList(motionLog);
-                for (String str : toSend) {
-                    outputStream.write((str + "\n").getBytes());
-                    sleep(25);
+                for (int i = 0;i<toSend.size(); i++) {
+                    outputStream.write((toSend.get(i) + "\n").getBytes());
+                    sleep(100);
                 }
+                Log.d("toSend.size(): ", String.valueOf(toSend.size()));
+
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
@@ -665,7 +669,9 @@ public class MainActivity extends WearableActivity {
         ArrayList<String> toSend = new ArrayList<>();
         Scanner scanner = new Scanner(motionLog);
         while (scanner.hasNextLine()) {
-            toSend.add(scanner.nextLine());
+            String str = scanner.nextLine();
+            toSend.add(str);
+            Log.d("toSend", str);    //test
         }
         scanner.close();
 

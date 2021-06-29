@@ -12,4 +12,6 @@
     <string name="menu_home">Main Page</string>
     <string name="menu_gallery">Gallery</string>
     <string name="menu_slideshow">Slideshow</string>
+
+    <string name="waiting_for_connection">Waiting for Connection📱🔗⌚</string>
 </resources>
