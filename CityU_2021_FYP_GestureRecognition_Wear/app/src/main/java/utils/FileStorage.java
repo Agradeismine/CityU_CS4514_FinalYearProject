@@ -18,14 +18,14 @@ public class FileStorage {
     }
 
 
-    public static String saveLineData(File file, LineData lineData, int selectedEntryIndex, int length) throws IOException {
+    public static String saveLineDataToFile(File file, LineData lineData, int selectedEntryIndex, int length) throws IOException {
         StringBuilder toSend;
         // csv format:
         // timestamp, x, y, z
-        try (FileOutputStream fos = new FileOutputStream(file)){
+        try (FileOutputStream fos = new FileOutputStream(file)) {
             OutputStreamWriter osw = new OutputStreamWriter(fos);
             //String header = String.format("index,x,y,z\n");
-            toSend= new StringBuilder("Start\n");
+            toSend = new StringBuilder("Start\n");
             osw.write(String.valueOf(toSend));
             Log.d("First Line of osw.write", String.valueOf(toSend));
             //This is the whole X,Y,Z Line
@@ -54,6 +54,41 @@ public class FileStorage {
             Log.d("selectedEntryIndex: ", String.valueOf(selectedEntryIndex));
             Log.d("length: ", String.valueOf(length));
         }
+        return toSend.toString();
+    }
+
+    public static String saveLineData(String fileName, LineData lineData, int selectedEntryIndex, int length) {
+        StringBuilder toSend;
+        // csv format:
+        // timestamp, x, y, z
+        //String header = String.format("index,x,y,z\n");
+        toSend = new StringBuilder("Start\n");
+        toSend.append(fileName).append("\n");
+        Log.d("First 2 Lines of osw.write", String.valueOf(toSend));
+        //This is the whole X,Y,Z Line
+        ILineDataSet setX = lineData.getDataSetByIndex(0);
+        ILineDataSet setY = lineData.getDataSetByIndex(1);
+        ILineDataSet setZ = lineData.getDataSetByIndex(2);
+
+        if ((setX.getEntryCount() != setY.getEntryCount()) || (setY.getEntryCount() != setZ.getEntryCount()))
+            throw new IllegalStateException("Z, Y, Z data set is different");
+
+        float startX = setX.getEntryForIndex(selectedEntryIndex).getX(); // fix and get start time
+        for (int i = selectedEntryIndex; i < selectedEntryIndex + length; i++) {
+            String str = String.format(Locale.ROOT, "%f,%f,%f,%f\n",
+                    setX.getEntryForIndex(i).getX() - startX,   //current Timestamp of DataSet
+                    setX.getEntryForIndex(i).getY(),
+                    setY.getEntryForIndex(i).getY(),
+                    setZ.getEntryForIndex(i).getY());
+            toSend.append(str);
+        }
+        toSend.append("End\n");
+        toSend.append("End\n");
+
+        Log.d("selectedEntryIndex", String.valueOf(selectedEntryIndex));
+        Log.d("length", String.valueOf(length));
+        Log.d("toSend", String.valueOf(toSend));
+
         return toSend.toString();
     }
 }

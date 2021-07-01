@@ -6,11 +6,14 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,11 +34,15 @@ import com.cityu_2021_fyp.gesturerecognition_phone.LoadingDialog;
 import com.cityu_2021_fyp.gesturerecognition_phone.MainActivity;
 import com.cityu_2021_fyp.gesturerecognition_phone.R;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.UUID;
+
+import utils.FileStorage;
 
 public class HomeFragment extends Fragment {
 
@@ -60,6 +67,7 @@ public class HomeFragment extends Fragment {
     private static final UUID MY_UUID = UUID.fromString("8ce235c0-223a-19e0-ac64-0803950c9a66");
 
     LoadingDialog loadingDialog;
+    String receivedString;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -170,14 +178,41 @@ public class HomeFragment extends Fragment {
                     String tempMsg = new String(readBuff, 0, msg.arg1);
                     msgStatus.setTextColor(0xFF74BDDD);
                     msgStatus.setText("Receiving...");
+                    Log.d("tempMsg",tempMsg);
                     if (tempMsg.equalsIgnoreCase("Start\n")) {
                         msg_box.setText("");
+                        receivedString = "";
                         loadingDialog.startLoadingDialog();
+                        showToast("Start receive data");
                     } else if (tempMsg.equalsIgnoreCase("End\n")) {
                         msgStatus.setText("");
                         loadingDialog.dismissDialog();
-                        Toast.makeText(mContext, "Message receive successfully", Toast.LENGTH_SHORT).show();
+                        showToast("Message receive successfully");
+
+                        //The received string is a gesture type
+                        if (receivedString.length() < 20) {
+                            msg_box.setText(receivedString);
+                        } else {
+                            //The received string contains many data, thats mean it is data file
+                            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                            builder.setTitle("Motion log file received. Do you want to save it?");
+                            builder.setPositiveButton("OK", (dialog, id) -> {
+                                try {
+                                    String filePath = FileStorage.saveMotionData(mContext, receivedString);  //mContext.getCacheDir().getAbsolutePath()
+                                    showToast("File saved into "+filePath + "successfully");
+                                } catch (IOException e) {
+                                    showToast("Error occurred, detailed in Android Studio");
+                                    e.printStackTrace();
+                                }
+                            });
+                            builder.setNegativeButton("Cancel", (dialog, id) -> {
+                                //do noting
+                            });
+                            AlertDialog dialog = builder.create();
+                            dialog.show();
+                        }
                     } else {
+                        receivedString+=tempMsg;
                         msg_box.append(tempMsg);
                     }
                     break;
@@ -185,6 +220,12 @@ public class HomeFragment extends Fragment {
             return true;
         }
     });
+
+    private void showToast(String str) {
+        Toast toast = Toast.makeText(mContext, str, Toast.LENGTH_SHORT);
+        toast.show();
+    }
+
     //Server side
     private class ServerClass extends Thread {
         private BluetoothServerSocket serverSocket;
@@ -196,6 +237,7 @@ public class HomeFragment extends Fragment {
                 e.printStackTrace();
             }
         }
+
         //continuously waiting for a device connection until paired with another
         public void run() {
             BluetoothSocket socket = null;

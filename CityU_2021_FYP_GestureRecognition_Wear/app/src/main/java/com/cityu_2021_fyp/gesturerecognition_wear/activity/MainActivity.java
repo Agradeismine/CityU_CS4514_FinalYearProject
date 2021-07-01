@@ -15,8 +15,10 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.renderscript.Sampler;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
@@ -93,7 +95,6 @@ public class MainActivity extends WearableActivity {
     private static final int GESTURE_SAMPLES = 128;
     private static final int GESTURE_DURATION_MS = 1280000; // 1.28 sec
 
-
     private SensorManager sensorManager;
     private Sensor accelerometer;
     private boolean recStarted, detectStarted = false;
@@ -101,7 +102,6 @@ public class MainActivity extends WearableActivity {
     private static final int Y_INDEX = 1;
     private static final int Z_INDEX = 2;
     private static final int[] LINE_COLORS = {0xFFFF0000, 0xFF00FF00, 0xFF0000FF};  //Transparency is 0xFF, which is completely opaque, Red, Green, Blue
-
 
     private static final String APP_NAME = "CityU_2021_FYP_GestureRecognition";
     private static final UUID MY_UUID = UUID.fromString("8ce235c0-223a-19e0-ac64-0803950c9a66");
@@ -130,6 +130,33 @@ public class MainActivity extends WearableActivity {
         //init the view before do anything
         findViewByIdes();
         implementViewListeners();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+
+        Log.d(TAG, "onKeyDown Keycode: " + keyCode);
+
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_NAVIGATE_NEXT:
+                showToast("sawadika~ KEYCODE_NAVIGATE_NEXT");
+                return true;
+            case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
+                // Do something that advances user view to the previous item in an ordered list
+                return true;
+            case KeyEvent.KEYCODE_NAVIGATE_IN:
+                // Do something that activates the item that currently has focus or expands to
+                // the next level of a navigation hierarchy
+                return true;
+            case KeyEvent.KEYCODE_NAVIGATE_OUT:
+                // Do something that backs out one level of a navigation hierarchy or collapses
+                // the item that currently has focus.
+                return true;
+            default:
+                // If you did not handle, then let it be handled by the next possible element as
+                // deemed by Activity.
+                return super.onKeyDown(keyCode, event);
+        }
     }
 
     private void checkPermission() {
@@ -242,7 +269,7 @@ public class MainActivity extends WearableActivity {
         listen.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ServerClass serverClass=new ServerClass();
+                ServerClass serverClass = new ServerClass();
                 serverClass.start();
             }
         });
@@ -263,24 +290,22 @@ public class MainActivity extends WearableActivity {
         });
 
         detectMotion.setOnClickListener(v -> {
-            if(detectStarted){
+            if (detectStarted) {
                 motionDetector.stop();
                 detectStarted = !detectStarted;
                 showToast(getString(R.string.hand_detect_stop));
-
-            }else{
+                msg_box.setText("");
+            } else {
                 try {
                     motionDetector.start();
                     showToast(getString(R.string.hand_detect_start));
                     msg_box.setText("");
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     showToast("Failed to start motion detector. Error:" + e);
                 }
                 detectStarted = !detectStarted;
             }
-
 
 
         });
@@ -370,9 +395,10 @@ public class MainActivity extends WearableActivity {
     private void sendSelectionData(String fileName) {
         try {
             //save file to "/data/data/<application package>/cache"
-            sendReceive.write(FileStorage.saveLineData(new File(getApplicationContext().getCacheDir().getAbsolutePath(), fileName), getLineData(), selectedEntryIndex, GESTURE_SAMPLES));
+            //sendReceive.write(FileStorage.saveLineDataToFile(new File(getApplicationContext().getCacheDir().getAbsolutePath(), fileName), getLineData(), selectedEntryIndex, GESTURE_SAMPLES));
+            sendReceive.write(FileStorage.saveLineData(fileName, getLineData(), selectedEntryIndex, GESTURE_SAMPLES));
             showToast(getString(R.string.data_saved));
-        } catch (IOException e) {
+        } catch (Exception e) {
             Log.e(TAG, getString(R.string.failed_to_save), e);
             showToast(getString(R.string.failed_to_save_error) + e);
         }
@@ -550,7 +576,7 @@ public class MainActivity extends WearableActivity {
 
             while (socket == null) {
                 try {
-                    Log.d("Listen Button Connection","CONNECTING...");
+                    Log.d("Listen Button Connection", "CONNECTING...");
                     Message message = Message.obtain();
                     message.what = STATE_CONNECTING;
                     handler.sendMessage(message);
@@ -561,7 +587,7 @@ public class MainActivity extends WearableActivity {
                     Message message = Message.obtain();
                     message.what = STATE_CONNECTION_FAILED;
                     handler.sendMessage(message);
-                } catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
 
@@ -653,9 +679,10 @@ public class MainActivity extends WearableActivity {
             try {
                 Log.d("motionLog", motionLog);
                 ArrayList<String> toSend = spliteStringToArrayList(motionLog);
-                for (int i = 0;i<toSend.size(); i++) {
+                for (int i = 0; i < toSend.size(); i++) {
+                    Log.d("(toSend.get(" + i + ")", toSend.get(i));
                     outputStream.write((toSend.get(i) + "\n").getBytes());
-                    sleep(100);
+                    sleep(500);  //500 is ok, but slow
                 }
                 Log.d("toSend.size(): ", String.valueOf(toSend.size()));
 
@@ -665,14 +692,33 @@ public class MainActivity extends WearableActivity {
         }
     }
 
+    //motionLog always has 131 lines
     private ArrayList<String> spliteStringToArrayList(String motionLog) {
         ArrayList<String> toSend = new ArrayList<>();
         Scanner scanner = new Scanner(motionLog);
-        while (scanner.hasNextLine()) {
-            String str = scanner.nextLine();
-            toSend.add(str);
-            Log.d("toSend", str);    //test
+        StringBuilder str;
+        toSend.add(scanner.nextLine()); //"Start" signal
+        Log.d("toSend.get(0)", toSend.get(0));    //test
+        toSend.add(scanner.nextLine()); //"FileName"
+        Log.d("toSend.get(1)", toSend.get(1));    //test
+
+        //save 128 data samples, each 8 lines a group for sending
+        for (int i = 0; i < 16; i++) {
+            str = new StringBuilder();
+            for (int j = 0; j < 8; j++) {
+                if (j != 7) {
+                    str.append(scanner.nextLine()).append("\n");
+                } else {
+                    str.append(scanner.nextLine());
+                }
+            }
+            toSend.add(String.valueOf(str));
+            Log.d("toSend.get(" + i + 2 + ")", toSend.get(i + 2));    //test
         }
+
+        toSend.add(scanner.nextLine()); //"End" signal
+        Log.d("toSend.get(last)", toSend.get(toSend.size() - 1));    //test
+
         scanner.close();
 
         return toSend;

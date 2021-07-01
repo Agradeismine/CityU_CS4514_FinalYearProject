@@ -17,8 +17,9 @@ In this final step, you'll use everything: the debugger, the phone, and the watc
 1. Connect the phone to your development machine with a USB cable.
 2. Run these two commands in the debugger:
 
-	1: 	"adb forward tcp:4444 localabstract:/adb-hub"
+	1:	adb forward tcp:4444 localabstract:/adb-hub
 		or
-		"adb -s 243e016f forward tcp:4444 localabstract:/adb-hub"
-	2: adb connect 127.0.0.1:4444
+		adb -s 243e016f forward tcp:4444 localabstract:/adb-hub
+		
+	2:  adb connect 127.0.0.1:4444
 	
