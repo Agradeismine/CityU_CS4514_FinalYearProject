@@ -6,39 +6,41 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelProviders;
 
 import com.cityu_2021_fyp.gesturerecognition_phone.LoadingDialog;
-import com.cityu_2021_fyp.gesturerecognition_phone.MainActivity;
 import com.cityu_2021_fyp.gesturerecognition_phone.R;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Objects;
-import java.util.Scanner;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
@@ -66,8 +68,15 @@ public class HomeFragment extends Fragment {
     private static final String APP_NAME = "CityU_2021_FYP_GestureRecognition";
     private static final UUID MY_UUID = UUID.fromString("8ce235c0-223a-19e0-ac64-0803950c9a66");
 
-    LoadingDialog loadingDialog;
-    String receivedString;
+    private LoadingDialog loadingDialog;
+    private String receivedString;
+    private DateFormat dateFormat;
+    private DateFormat timeFormat;
+    private ImageButton bluetoothSettingBtn;
+
+    private String gesture_records;
+    private ScrollView globalScrollView;
+
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -88,8 +97,31 @@ public class HomeFragment extends Fragment {
 
         implementListeners();
         mContext = requireActivity().getApplicationContext();
+        gesture_records = readFromFile();
+        msg_box.setText(gesture_records);
 
         return root;
+    }
+
+    private String readFromFile() {
+        StringBuilder out = new StringBuilder();
+        try {
+            InputStream in = new FileInputStream(new File(mContext.getExternalFilesDir(null),"/gesture_records.log"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                out.append(line).append("\n");
+            }
+            reader.close();
+        }
+        catch (FileNotFoundException e) {
+            Log.e("login activity", "File not found: " + e.toString());
+        } catch (IOException e) {
+            Log.e("login activity", "Can not read file: " + e.toString());
+        }
+
+        return out.toString();
     }
 
     private void checkPermission() {
@@ -115,6 +147,16 @@ public class HomeFragment extends Fragment {
 
     private void implementListeners() {
 
+        bluetoothSettingBtn.setOnClickListener(v -> {
+            if(listen.getVisibility()==View.GONE){
+                bluetoothStatus.setText("State");
+                bluetoothStatus.setTextColor(0xFF000000);
+                listen.setVisibility(View.VISIBLE);
+                listDevices.setVisibility(View.VISIBLE);
+                bluetoothSettingBtn.setVisibility(View.GONE);
+            }
+        });
+
         listDevices.setOnClickListener(view -> {
             //show listDevices
             listView.setVisibility(View.VISIBLE);
@@ -130,7 +172,7 @@ public class HomeFragment extends Fragment {
                     strings[index] = device.getName();
                     index++;
                 }
-                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(getActivity().getApplicationContext(), android.R.layout.simple_list_item_1, strings);
+                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(mContext, android.R.layout.simple_list_item_1, strings);
                 listView.setAdapter(arrayAdapter);
             }
         });
@@ -160,66 +202,101 @@ public class HomeFragment extends Fragment {
                 case STATE_CONNECTING:
                     bluetoothStatus.setText("Connecting");
                     bluetoothStatus.setTextColor(0xFFE0AF1F);
-                    msg_box.setText("");
                     break;
                 case STATE_CONNECTED:
                     bluetoothStatus.setText("Connected");
+                    globalScrollView.fullScroll(View.FOCUS_DOWN);
                     bluetoothStatus.setTextColor(Color.GREEN);
+                    listen.setVisibility(View.GONE);
+                    listDevices.setVisibility(View.GONE);
                     listView.setVisibility(View.GONE);
-                    msg_box.setText("Waiting for message...");
+                    bluetoothSettingBtn.setVisibility(View.VISIBLE);
+                    showToast("Connected with Android Wear successfully");
                     break;
                 case STATE_CONNECTION_FAILED:
                     bluetoothStatus.setText("Connection Failed");
                     bluetoothStatus.setTextColor(Color.RED);
-                    msg_box.setText(R.string.waiting_for_connection);
+                    msg_box.append("Waiting for Connection\uD83D\uDCF1\uD83D\uDD17⌚");
                     break;
                 case STATE_MESSAGE_RECEIVED:
                     byte[] readBuff = (byte[]) msg.obj;
                     String tempMsg = new String(readBuff, 0, msg.arg1);
-                    msgStatus.setTextColor(0xFF74BDDD);
-                    msgStatus.setText("Receiving...");
-                    Log.d("tempMsg",tempMsg);
-                    if (tempMsg.equalsIgnoreCase("Start\n")) {
-                        msg_box.setText("");
+                    Log.d("tempMsg", tempMsg);
+                    if (tempMsg.equalsIgnoreCase("Start\n")) {          //start to receive message
+                        msgStatus.setTextColor(0xFF74BDDD);
+                        msgStatus.setText("Receiving...");
                         receivedString = "";
                         loadingDialog.startLoadingDialog();
                         showToast("Start receive data");
-                    } else if (tempMsg.equalsIgnoreCase("End\n")) {
+                    } else if (tempMsg.equalsIgnoreCase("End\n")) {     //data received, handle the message
                         msgStatus.setText("");
                         loadingDialog.dismissDialog();
                         showToast("Message receive successfully");
 
-                        //The received string is a gesture type
-                        if (receivedString.length() < 20) {
-                            msg_box.setText(receivedString);
-                        } else {
-                            //The received string contains many data, thats mean it is data file
-                            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                            builder.setTitle("Motion log file received. Do you want to save it?");
-                            builder.setPositiveButton("OK", (dialog, id) -> {
-                                try {
-                                    String filePath = FileStorage.saveMotionData(mContext, receivedString);  //mContext.getCacheDir().getAbsolutePath()
-                                    showToast("File saved into "+filePath + "successfully");
-                                } catch (IOException e) {
-                                    showToast("Error occurred, detailed in Android Studio");
-                                    e.printStackTrace();
-                                }
-                            });
-                            builder.setNegativeButton("Cancel", (dialog, id) -> {
-                                //do noting
-                            });
-                            AlertDialog dialog = builder.create();
-                            dialog.show();
-                        }
+                        //The received string contains many data, thats mean it is data file
+                        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                        builder.setTitle("Motion log file received. Do you want to save it?");
+                        builder.setPositiveButton("OK", (dialog, id) -> {
+                            try {
+                                String filePath = FileStorage.saveMotionData(mContext, receivedString);  //mContext.getCacheDir().getAbsolutePath()
+                                showToast("File saved into " + filePath + "successfully");
+                            } catch (IOException e) {
+                                showToast("Error occurred, detailed in Android Studio");
+                                e.printStackTrace();
+                            }
+                        });
+                        builder.setNegativeButton("Cancel", (dialog, id) -> {
+                            //do noting
+                        });
+                        AlertDialog dialog = builder.create();
+                        dialog.show();
+
+                    } else if (tempMsg.length() < 18) {    //the received string is a gesture type
+                        addLog("Gesture detected: " + tempMsg);
                     } else {
-                        receivedString+=tempMsg;
-                        msg_box.append(tempMsg);
+                        receivedString += tempMsg;
                     }
                     break;
             }
             return true;
         }
     });
+
+    private void addLog(String str) {
+        Date date = new Date();
+        String logStr = String.format("[%s %s] %s\n", getDateFormat().format(date), getTimeFormat().format(date), str);
+        msg_box.append(logStr);
+        globalScrollView.fullScroll(View.FOCUS_DOWN);
+
+        try {
+            File newFile = new File(mContext.getExternalFilesDir(null), "gesture_records.log");
+            newFile.createNewFile();
+            FileOutputStream fos = new FileOutputStream(newFile, true);
+            OutputStreamWriter osw = new OutputStreamWriter(fos);
+            //String header = String.format("index,x,y,z\n");
+            osw.write(logStr);
+            osw.close();
+            Log.d("mContext.getExternalFilesDir(null).getAbsolutePath()/", "gesture_records.log");
+        } catch (IOException e) {
+            showToast("Error, detailed in Android Studio");
+            e.printStackTrace();
+        }
+    }
+
+    private DateFormat getTimeFormat() {
+        if (timeFormat == null) {
+            timeFormat = android.text.format.DateFormat.getTimeFormat(mContext);
+        }
+        return timeFormat;
+    }
+
+    private DateFormat getDateFormat() {
+        if (dateFormat == null) {
+            dateFormat = android.text.format.DateFormat.getDateFormat(mContext);
+        }
+        return dateFormat;
+
+    }
 
     private void showToast(String str) {
         Toast toast = Toast.makeText(mContext, str, Toast.LENGTH_SHORT);
@@ -337,11 +414,14 @@ public class HomeFragment extends Fragment {
     }
 
     private void findViewByIdes(View root) {
+        globalScrollView = root.findViewById(R.id.globalScrollView);
         msg_box = root.findViewById(R.id.msg_box);
+        bluetoothSettingBtn = root.findViewById(R.id.bluetoothSettingBtn);
+        bluetoothSettingBtn.setVisibility(View.GONE);
         listen = root.findViewById(R.id.listen);
         listDevices = root.findViewById(R.id.listDevices);
         listView = root.findViewById(R.id.listview);
-        listView.setVisibility(View.INVISIBLE);
+        listView.setVisibility(View.GONE);
         bluetoothStatus = root.findViewById(R.id.bluetoothStatus);
         msgStatus = root.findViewById(R.id.msgStatus);
     }

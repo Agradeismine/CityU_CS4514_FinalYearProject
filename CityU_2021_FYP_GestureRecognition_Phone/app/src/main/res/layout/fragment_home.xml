@@ -10,7 +10,7 @@
     <Button
         android:id="@+id/listen"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="42dp"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_marginStart="14dp"
@@ -20,13 +20,15 @@
     <Button
         android:id="@+id/listDevices"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="42dp"
         android:layout_above="@+id/listview"
         android:layout_alignParentTop="true"
         android:layout_marginStart="48dp"
         android:layout_marginTop="19dp"
         android:layout_toEndOf="@+id/listen"
         android:text="List Devices" />
+
+
 
     <ListView
         android:id="@+id/listview"
@@ -37,25 +39,20 @@
         android:layout_marginTop="32dp"
         android:background="@android:color/darker_gray"
         android:visibility="visible">
+
     </ListView>
 
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@+id/listview">
-
-        <TextView
-            android:id="@+id/msg_box"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="56dp"
-            android:hint="Message"
-            android:textAlignment="center"
-            android:textColor="?android:attr/textColorLink"
-            android:textSize="30sp"
-            android:textStyle="italic" />
-    </ScrollView>
+    <TextView
+        android:id="@+id/msgStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/bluetoothStatus"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="14dp"
+        android:text="No Message Received."
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/bluetoothStatus"
@@ -69,14 +66,40 @@
         android:textSize="14sp"
         android:textStyle="italic" />
 
-    <TextView
-        android:id="@+id/msgStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <ImageButton
+        android:id="@+id/bluetoothSettingBtn"
+        android:layout_width="40dp"
+        android:layout_height="42dp"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="19dp"
+        android:layout_toEndOf="@+id/listDevices"
+        android:src="@drawable/ic_baseline_settings_bluetooth_24"
+        android:visibility="visible" />
+
+    <ScrollView
+        android:id="@+id/globalScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_below="@+id/listview"
-        android:layout_alignParentEnd="true"
-        android:layout_marginTop="14dp"
-        android:layout_marginEnd="14dp"
-        android:text="No Message Received."
-        android:textStyle="bold" />
+        android:layout_marginTop="58dp"
+        android:layout_marginBottom="15dp"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/msg_box"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:hint="Message"
+                android:textColor="?android:attr/textColorLink"
+                android:textSize="18sp"
+                android:textStyle="italic" />
+        </LinearLayout>
+    </ScrollView>
+
 </RelativeLayout>

@@ -7,11 +7,10 @@
     <string name="nav_header_title">Gesture Recognition (Phone side)</string>
     <string name="nav_header_subtitle">CityU 2021 FYP</string>
     <string name="nav_header_desc">Navigation header</string>
-    <string name="action_settings">Settings</string>
 
     <string name="menu_home">Main Page</string>
     <string name="menu_gallery">Gallery</string>
     <string name="menu_slideshow">Slideshow</string>
 
-    <string name="waiting_for_connection">Waiting for Connection📱🔗⌚</string>
+    <string name="bluetooth_settings">Bluetooth setting</string>
 </resources>

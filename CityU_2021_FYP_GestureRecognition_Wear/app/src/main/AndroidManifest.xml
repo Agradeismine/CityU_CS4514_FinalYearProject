@@ -11,7 +11,6 @@
     <uses-feature android:name="android.hardware.type.watch" />
 
     <application
-        android:name=".Application"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -28,8 +27,9 @@
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
 
+<!--        com.cityu_2021_fyp.gesturerecognition_wear.MainActivity-->
         <activity
-            android:name="com.cityu_2021_fyp.gesturerecognition_wear.activity.MainActivity"
+            android:name=".MainActivity"
             android:label="@string/app_name"
             android:theme="@style/Theme.Wearable.Modal"
             >

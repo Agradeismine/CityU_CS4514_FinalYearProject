@@ -1,4 +1,4 @@
-package com.cityu_2021_fyp.gesturerecognition_wear.activity;
+package com.cityu_2021_fyp.gesturerecognition_wear;
 
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -15,7 +15,6 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.renderscript.Sampler;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -33,7 +32,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import com.cityu_2021_fyp.gesturerecognition_wear.R;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
@@ -47,18 +45,15 @@ import com.github.mikephil.charting.listener.OnChartGestureListener;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.UUID;
 
-import settings.AppSettings;
 import uk.co.lemberg.motiondetectionlib.MotionDetector;
 import utils.FileStorage;
 import utils.TimestampAxisFormatter;
@@ -67,15 +62,14 @@ public class MainActivity extends WearableActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String[] LINE_DESCRIPTIONS = {"X", "Y", "Z"};
-    private Button listen, listDevices;  //, saveMotion ,send
-    private ImageButton detectMotion, saveMotion, closeButton;
+    private Button listen, listDevices;
+    private ImageButton detectMotion, saveMotion, bluetoothSettingButton, closeButton;
     private ToggleButton recMotion;
     private Spinner labelSpinner;
     private ListView listView;
     private TextView msg_box, status;
     private LinearLayout linLayoutForBlueTooth, linLayoutForRecording;
-
-    private AppSettings settings;
+    private ScrollView globalScrollView;
 
     BluetoothAdapter bluetoothAdapter;
     BluetoothDevice[] btArray;
@@ -108,10 +102,7 @@ public class MainActivity extends WearableActivity {
     private long fileNameTimestamp = -1;
 
     private MotionDetector motionDetector;
-    private DateFormat dateFormat;
     private DateFormat timeFormat;
-    private ScrollView globalScrollView;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,7 +112,6 @@ public class MainActivity extends WearableActivity {
         // Enables Always-on
         setAmbientEnabled();
 
-        settings = AppSettings.getAppSettings(this);
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 
@@ -137,26 +127,23 @@ public class MainActivity extends WearableActivity {
 
         Log.d(TAG, "onKeyDown Keycode: " + keyCode);
 
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_NAVIGATE_NEXT:
-                showToast("sawadika~ KEYCODE_NAVIGATE_NEXT");
-                return true;
-            case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
-                // Do something that advances user view to the previous item in an ordered list
-                return true;
-            case KeyEvent.KEYCODE_NAVIGATE_IN:
-                // Do something that activates the item that currently has focus or expands to
-                // the next level of a navigation hierarchy
-                return true;
-            case KeyEvent.KEYCODE_NAVIGATE_OUT:
-                // Do something that backs out one level of a navigation hierarchy or collapses
-                // the item that currently has focus.
-                return true;
-            default:
-                // If you did not handle, then let it be handled by the next possible element as
-                // deemed by Activity.
-                return super.onKeyDown(keyCode, event);
+        if(detectStarted){
+            switch (keyCode) {
+                //Flick wrist out
+                case KeyEvent.KEYCODE_NAVIGATE_NEXT:
+                    showToast("Gesture detected: Flick wrist out");
+                    sendReceive.write("Flick wrist out");
+                    return true;
+                //Flick wrist in
+                case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
+                    showToast("Gesture detected: Flick wrist in");
+                    sendReceive.write("Flick wrist in");
+                    return true;
+                default:
+                    return super.onKeyDown(keyCode, event);
+            }
         }
+        return false;
     }
 
     private void checkPermission() {
@@ -174,13 +161,6 @@ public class MainActivity extends WearableActivity {
     }
 
     @Override
-    protected void onStop() {
-        sensorManager.unregisterListener(sensorEventListener);
-        motionDetector.stop();
-        super.onStop();
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
     }
@@ -192,6 +172,7 @@ public class MainActivity extends WearableActivity {
         listView = findViewById(R.id.listview);
         msg_box = findViewById(R.id.msg_box);
         status = findViewById(R.id.status);
+        bluetoothSettingButton = findViewById(R.id.bluetoothSettingButton);
         closeButton = findViewById(R.id.closeButton);
         detectMotion = findViewById(R.id.detectMotion);
         recMotion = findViewById(R.id.recMotion);
@@ -274,37 +255,37 @@ public class MainActivity extends WearableActivity {
             }
         });
 
+        bluetoothSettingButton.setOnClickListener(v -> {
+            if(linLayoutForBlueTooth.getVisibility()==View.GONE){
+                status.setText("Status");
+                status.setTextColor(0xFFFFFFFF);
+                linLayoutForBlueTooth.setVisibility(View.VISIBLE);
+                linLayoutForRecording.setVisibility(View.GONE);
+                chart.setVisibility(View.GONE);
+                globalScrollView.fullScroll(View.FOCUS_UP);
+                bluetoothSettingButton.setVisibility(View.GONE);
+            }
+        });
+
         closeButton.setOnClickListener(v -> {
+            sensorManager.unregisterListener(sensorEventListener);
+            motionDetector.stop();
             finish();
         });
 
         recMotion.setOnClickListener(view -> {
-            if (recStarted) {
+            if (recStarted) {   //true, recording
                 stopRec();
-                detectMotion.setEnabled(true);
-            } else {
+            } else {            //false, not recording
                 startRec();
-                detectMotion.setEnabled(false);
-
             }
         });
 
         detectMotion.setOnClickListener(v -> {
-            if (detectStarted) {
-                motionDetector.stop();
-                detectStarted = !detectStarted;
-                showToast(getString(R.string.hand_detect_stop));
-                msg_box.setText("");
-            } else {
-                try {
-                    motionDetector.start();
-                    showToast(getString(R.string.hand_detect_start));
-                    msg_box.setText("");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    showToast("Failed to start motion detector. Error:" + e);
-                }
-                detectStarted = !detectStarted;
+            if (detectStarted) {    //true, detecting
+                stopDetect();
+            } else {                //false, not detecting
+                startDetect();
             }
 
 
@@ -316,8 +297,8 @@ public class MainActivity extends WearableActivity {
                 AlertDialog.Builder mBuilder = new AlertDialog.Builder(MainActivity.this);
                 View mView = getLayoutInflater().inflate(R.layout.dialog_spinner, null);
                 mBuilder.setTitle("Save with Label");
-                labelSpinner = (Spinner) mView.findViewById(R.id.labelSpinner);
-                ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this,
+                labelSpinner = mView.findViewById(R.id.labelSpinner);
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this,
                         android.R.layout.simple_spinner_item,
                         getResources().getStringArray(R.array.colorList));
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -347,13 +328,27 @@ public class MainActivity extends WearableActivity {
 
         motionDetector = new MotionDetector(this, gestureListener);
 
-//        send.setOnClickListener(new View.OnClickListener() {    //no send button at this time.
-//            @Override
-//            public void onClick(View view) {
-//                String string= String.valueOf(writeMsg.getText());
-//                sendReceive.write(string.getBytes());
-//            }
-//        });
+    }
+
+    private void startDetect() {
+        try {
+            recMotion.setEnabled(false);
+            motionDetector.start();
+            showToast(getString(R.string.hand_detect_start));
+            msg_box.setText("");
+            detectStarted = !detectStarted;
+        } catch (Exception e) {
+            e.printStackTrace();
+            showToast("Failed to start motion detector. Error:" + e);
+        }
+    }
+
+    private void stopDetect() {
+        recMotion.setEnabled(true);
+        motionDetector.stop();
+        detectStarted = !detectStarted;
+        showToast(getString(R.string.hand_detect_stop));
+        msg_box.setText("");
     }
 
     //Implementation:
@@ -372,7 +367,7 @@ public class MainActivity extends WearableActivity {
             }
             current++;
         }
-        //dont find the entry value which is larger than 3
+        //don't find the entry value which is larger than 3
         if (current == dataSet.getEntryCount()) {
             current = -1;
         } else {
@@ -394,8 +389,6 @@ public class MainActivity extends WearableActivity {
 
     private void sendSelectionData(String fileName) {
         try {
-            //save file to "/data/data/<application package>/cache"
-            //sendReceive.write(FileStorage.saveLineDataToFile(new File(getApplicationContext().getCacheDir().getAbsolutePath(), fileName), getLineData(), selectedEntryIndex, GESTURE_SAMPLES));
             sendReceive.write(FileStorage.saveLineData(fileName, getLineData(), selectedEntryIndex, GESTURE_SAMPLES));
             showToast(getString(R.string.data_saved));
         } catch (Exception e) {
@@ -422,16 +415,19 @@ public class MainActivity extends WearableActivity {
         if (recStarted) {
             sensorManager.unregisterListener(sensorEventListener);
             recStarted = false;
+            detectMotion.setEnabled(true);
         }
     }
 
     private void startRec() {
         if (isStartRec()) {
             getLineData().clearValues();
+            detectMotion.setEnabled(false);
         } else {
             showToast(getString(R.string.sensor_failed));
             recMotion.setChecked(false);
         }
+
     }
 
     private boolean isStartRec() {
@@ -530,24 +526,27 @@ public class MainActivity extends WearableActivity {
 
             switch (msg.what) {
                 case STATE_LISTENING:
-                    status.setText("Listening");
+                    status.setText(R.string.state_listening);
                     status.setTextColor(0xFFE0AF1F);
                     break;
                 case STATE_CONNECTING:
-                    status.setText("Connecting");
+                    status.setText(R.string.state_connecting);
                     status.setTextColor(0xFFE0AF1F);
                     break;
                 case STATE_CONNECTED:
-                    status.setText("Connected");
+                    status.setText(R.string.state_connected);
                     status.setTextColor(Color.GREEN);
-                    msg_box.setText("Message");
+                    globalScrollView.fullScroll(View.FOCUS_UP);
+                    showToast("Connected");
+                    msg_box.setText("");
                     listView.setVisibility(View.GONE);
                     linLayoutForBlueTooth.setVisibility(View.GONE);
+                    bluetoothSettingButton.setVisibility(View.VISIBLE);
                     linLayoutForRecording.setVisibility(View.VISIBLE);
                     chart.setVisibility(View.VISIBLE);
                     break;
                 case STATE_CONNECTION_FAILED:
-                    status.setText("Connection Failed");
+                    status.setText(R.string.state_connection_failed);
                     status.setTextColor(Color.RED);
                     break;
                 case STATE_MESSAGE_RECEIVED:
@@ -678,14 +677,18 @@ public class MainActivity extends WearableActivity {
         public void write(String motionLog) {
             try {
                 Log.d("motionLog", motionLog);
-                ArrayList<String> toSend = spliteStringToArrayList(motionLog);
-                for (int i = 0; i < toSend.size(); i++) {
-                    Log.d("(toSend.get(" + i + ")", toSend.get(i));
-                    outputStream.write((toSend.get(i) + "\n").getBytes());
-                    sleep(500);  //500 is ok, but slow
-                }
-                Log.d("toSend.size(): ", String.valueOf(toSend.size()));
 
+                if(motionLog.length()<18){
+                    outputStream.write(motionLog.getBytes());
+                }else{
+                    ArrayList<String> toSend = spliteStringToArrayList(motionLog);
+                    for (int i = 0; i < toSend.size(); i++) {
+                        Log.d("(toSend.get(" + i + ")", toSend.get(i));
+                        outputStream.write((toSend.get(i) + "\n").getBytes());
+                        sleep(500);  //500 is ok, but slow
+                    }
+                    Log.d("toSend.size(): ", String.valueOf(toSend.size()));
+                }
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
@@ -821,32 +824,11 @@ public class MainActivity extends WearableActivity {
     private final MotionDetector.Listener gestureListener = new MotionDetector.Listener() {
         @Override
         public void onGestureRecognized(MotionDetector.GestureType gestureType) {
-            showToast(gestureType.toString());
-            addLog("Gesture detected: " + gestureType);
-            Log.d(TAG, "Gesture detected: " + gestureType);
+            showToast("Gesture detected: "+gestureType.toString());
+            Log.d(TAG, gestureType.toString());
+            sendReceive.write(gestureType.toString());
         }
     };
-
-    private void addLog(String str) {
-        Date date = new Date();
-        String logStr = String.format("[%s %s] %s\n", getDateFormat().format(date), getTimeFormat().format(date), str);
-        msg_box.append(logStr);
-        globalScrollView.fullScroll(View.FOCUS_DOWN);
-    }
-
-    private DateFormat getTimeFormat() {
-        if (timeFormat == null) {
-            timeFormat = android.text.format.DateFormat.getTimeFormat(this);
-        }
-        return timeFormat;
-    }
-
-    private DateFormat getDateFormat() {
-        if (dateFormat == null) {
-            dateFormat = android.text.format.DateFormat.getDateFormat(this);
-        }
-        return dateFormat;
-    }
 
     private String formatStatsText() {
         return String.format("Pos: %s/%s s\nSamples: %d", getXLabelAtHighlight(), getXLabelAtEnd(), getSamplesCount());

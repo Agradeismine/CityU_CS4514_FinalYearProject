@@ -33,7 +33,6 @@ public class FileStorage {
         
         // csv format:
         // timestamp, x, y, z
-        try {
             try (FileOutputStream fos = new FileOutputStream(new File(filePath))) {    //mContext.getExternalFilesDir(null).getAbsolutePath()
                 OutputStreamWriter osw = new OutputStreamWriter(fos);
                 //String header = String.format("index,x,y,z\n");
@@ -42,9 +41,6 @@ public class FileStorage {
                 osw.close();
                 Log.d("mContext.getExternalFilesDir(null).getAbsolutePath(),", filePath);
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
         return filePath;
     }
 }
