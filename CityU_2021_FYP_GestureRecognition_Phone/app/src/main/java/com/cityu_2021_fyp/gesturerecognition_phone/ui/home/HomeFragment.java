@@ -80,16 +80,8 @@ public class HomeFragment extends Fragment {
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        //HomeViewModel homeViewModel = ViewModelProviders.of(this).get(HomeViewModel.class);
         View root = inflater.inflate(R.layout.fragment_home, container, false);
         findViewByIdes(root);
-
-//        homeViewModel.getText().observe(getViewLifecycleOwner(), new Observer<String>() {
-//            @Override
-//            public void onChanged(@Nullable String s) {
-//                msg_box.setText(s);
-//            }
-//        });
 
         loadingDialog = new LoadingDialog(getActivity());
 
@@ -106,7 +98,7 @@ public class HomeFragment extends Fragment {
     private String readFromFile() {
         StringBuilder out = new StringBuilder();
         try {
-            InputStream in = new FileInputStream(new File(mContext.getExternalFilesDir(null),"/gesture_records.log"));
+            FileInputStream in = new FileInputStream(new File(mContext.getExternalFilesDir(null), "/gesture_records.log"));
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
             String line;
@@ -114,8 +106,7 @@ public class HomeFragment extends Fragment {
                 out.append(line).append("\n");
             }
             reader.close();
-        }
-        catch (FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             Log.e("login activity", "File not found: " + e.toString());
         } catch (IOException e) {
             Log.e("login activity", "Can not read file: " + e.toString());
@@ -132,14 +123,6 @@ public class HomeFragment extends Fragment {
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // TODO Auto-generated method stub
-//        if(requestCode == REQUEST_ENABLE_BLUETOOTH){
-//            //do something
-//        }
-    }
-
-    @Override
     public void onResume() {
         super.onResume();
         checkPermission();
@@ -148,7 +131,7 @@ public class HomeFragment extends Fragment {
     private void implementListeners() {
 
         bluetoothSettingBtn.setOnClickListener(v -> {
-            if(listen.getVisibility()==View.GONE){
+            if (listen.getVisibility() == View.GONE) {
                 bluetoothStatus.setText("State");
                 bluetoothStatus.setTextColor(0xFF000000);
                 listen.setVisibility(View.VISIBLE);
@@ -251,7 +234,7 @@ public class HomeFragment extends Fragment {
                         AlertDialog dialog = builder.create();
                         dialog.show();
 
-                    } else if (tempMsg.length() < 18) {    //the received string is a gesture type
+                    } else if (tempMsg.length() < 15) {    //the received string is a gesture type
                         addLog("Gesture detected: " + tempMsg);
                     } else {
                         receivedString += tempMsg;

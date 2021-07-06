@@ -12,14 +12,9 @@
         tools:layout="@layout/fragment_home" />
 
     <fragment
-        android:id="@+id/nav_gallery"
-        android:name="com.cityu_2021_fyp.gesturerecognition_phone.ui.gallery.GalleryFragment"
-        android:label="@string/menu_gallery"
-        tools:layout="@layout/fragment_gallery" />
+        android:id="@+id/nav_analysis"
+        android:name="com.cityu_2021_fyp.gesturerecognition_phone.ui.analysis.AnalyticalReportFragment"
+        android:label="@string/menu_analysis"
+        tools:layout="@layout/fragment_analytical_report" />
 
-    <fragment
-        android:id="@+id/nav_slideshow"
-        android:name="com.cityu_2021_fyp.gesturerecognition_phone.ui.slideshow.SlideshowFragment"
-        android:label="@string/menu_slideshow"
-        tools:layout="@layout/fragment_slideshow" />
 </navigation>

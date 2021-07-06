@@ -127,17 +127,17 @@ public class MainActivity extends WearableActivity {
 
         Log.d(TAG, "onKeyDown Keycode: " + keyCode);
 
-        if(detectStarted){
+        if (detectStarted) {
             switch (keyCode) {
                 //Flick wrist out
                 case KeyEvent.KEYCODE_NAVIGATE_NEXT:
-                    showToast("Gesture detected: Flick wrist out");
-                    sendReceive.write("Flick wrist out");
+                    showToast("Gesture detected: FlickWristOut");
+                    sendReceive.write("FlickWristOut");
                     return true;
                 //Flick wrist in
                 case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
-                    showToast("Gesture detected: Flick wrist in");
-                    sendReceive.write("Flick wrist in");
+                    showToast("Gesture detected: FlickWristIn");
+                    sendReceive.write("FlickWristIn");
                     return true;
                 default:
                     return super.onKeyDown(keyCode, event);
@@ -256,7 +256,8 @@ public class MainActivity extends WearableActivity {
         });
 
         bluetoothSettingButton.setOnClickListener(v -> {
-            if(linLayoutForBlueTooth.getVisibility()==View.GONE){
+            if (linLayoutForBlueTooth.getVisibility() == View.GONE) {
+                stopDetect();
                 status.setText("Status");
                 status.setTextColor(0xFFFFFFFF);
                 linLayoutForBlueTooth.setVisibility(View.VISIBLE);
@@ -463,8 +464,6 @@ public class MainActivity extends WearableActivity {
             addPoint(getLineData(), X_INDEX, floatTimestampMicros, x);
             addPoint(getLineData(), Y_INDEX, floatTimestampMicros, y);
             addPoint(getLineData(), Z_INDEX, floatTimestampMicros, z);
-            //Log.d("entryTimestampFixed", String.valueOf(entryTimestampFixed));  //for test
-            //Log.d("floatTimestampMicros", String.valueOf(floatTimestampMicros));  //for test
             chart.notifyDataSetChanged();
             chart.invalidate();
 
@@ -678,10 +677,10 @@ public class MainActivity extends WearableActivity {
             try {
                 Log.d("motionLog", motionLog);
 
-                if(motionLog.length()<18){
+                if (motionLog.length() < 18) {
                     outputStream.write(motionLog.getBytes());
-                }else{
-                    ArrayList<String> toSend = spliteStringToArrayList(motionLog);
+                } else {
+                    ArrayList<String> toSend = splitStringToArrayList(motionLog);
                     for (int i = 0; i < toSend.size(); i++) {
                         Log.d("(toSend.get(" + i + ")", toSend.get(i));
                         outputStream.write((toSend.get(i) + "\n").getBytes());
@@ -696,7 +695,7 @@ public class MainActivity extends WearableActivity {
     }
 
     //motionLog always has 131 lines
-    private ArrayList<String> spliteStringToArrayList(String motionLog) {
+    private ArrayList<String> splitStringToArrayList(String motionLog) {
         ArrayList<String> toSend = new ArrayList<>();
         Scanner scanner = new Scanner(motionLog);
         StringBuilder str;
@@ -824,7 +823,7 @@ public class MainActivity extends WearableActivity {
     private final MotionDetector.Listener gestureListener = new MotionDetector.Listener() {
         @Override
         public void onGestureRecognized(MotionDetector.GestureType gestureType) {
-            showToast("Gesture detected: "+gestureType.toString());
+            showToast("Gesture detected: " + gestureType.toString());
             Log.d(TAG, gestureType.toString());
             sendReceive.write(gestureType.toString());
         }
