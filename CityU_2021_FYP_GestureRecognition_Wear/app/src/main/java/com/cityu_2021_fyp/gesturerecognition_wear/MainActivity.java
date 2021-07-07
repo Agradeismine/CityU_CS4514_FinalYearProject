@@ -677,7 +677,7 @@ public class MainActivity extends WearableActivity {
             try {
                 Log.d("motionLog", motionLog);
 
-                if (motionLog.length() < 18) {
+                if (motionLog.length() < 15) {
                     outputStream.write(motionLog.getBytes());
                 } else {
                     ArrayList<String> toSend = splitStringToArrayList(motionLog);
