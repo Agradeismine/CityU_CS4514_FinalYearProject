@@ -754,7 +754,7 @@ public class MainActivity extends WearableActivity {
             //set the chart screen
             chart.fitScreen();
             //chart.resetZoom();
-            showToast("Zoom reseted");
+            showToast("Zoom is reset");
         }
 
         @Override
