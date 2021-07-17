@@ -15,6 +15,7 @@
         android:layout_alignParentTop="true"
         android:layout_marginStart="14dp"
         android:layout_marginTop="19dp"
+        android:textAllCaps="false"
         android:text="Listen" />
 
     <Button
@@ -26,6 +27,7 @@
         android:layout_marginStart="48dp"
         android:layout_marginTop="19dp"
         android:layout_toEndOf="@+id/listen"
+        android:textAllCaps="false"
         android:text="List Devices" />
 
 

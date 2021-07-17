@@ -222,7 +222,7 @@ public class HomeFragment extends Fragment {
                         builder.setPositiveButton("OK", (dialog, id) -> {
                             try {
                                 String filePath = FileStorage.saveMotionData(mContext, receivedString);  //mContext.getCacheDir().getAbsolutePath()
-                                showToast("File saved into " + filePath + "successfully");
+                                showToast("File saved into \"" + filePath + "\" successfully");
                             } catch (IOException e) {
                                 showToast("Error occurred, detailed in Android Studio");
                                 e.printStackTrace();
